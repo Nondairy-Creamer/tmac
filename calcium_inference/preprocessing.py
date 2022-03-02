@@ -22,7 +22,7 @@ def interpolate_over_nans(input_mat, t=None):
     for c in range(input_mat.shape[1]):
         # check if all the data is nan
         if np.all(np.isnan(input_mat[:, c])):
-            print('column ' + str(c) + ' is al NaN, skipping')
+            print('column ' + str(c) + ' is all NaN, skipping')
             continue
 
         # find the location of all nan values
