@@ -8,6 +8,26 @@ import calcium_inference.preprocessing as cip
 
 def generate_example_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
                           variance_a, variance_m, tau_a, tau_m):
+    """ Function that generates synthetic two channel imaging data
+
+    Args:
+        num_ind: number of measurements in time
+        num_neurons: number of neurons recorded
+        mean_r: mean fluoresence of the red channel
+        mean_g: mean fluoresence of the green channel
+        variance_noise_r: variance of the gaussian noise in the red channel
+        variance_noise_g: variance of the gaussian noise in the green channel
+        variance_a: variance of the calcium activity
+        variance_m: variance of the motion artifact
+        tau_a: timescale of the calcium activity
+        tau_m: timescale of the motion artifact
+
+    Returns:
+        red_bleached: synthetic red channel data (motion + noise)
+        green_bleached: synthetic green channel data (activity + motion + noise)
+        a: activity Gaussian process
+        m: motion artifact Gaussian process
+    """
     fourier_basis, frequency_vec = cif.get_fourier_basis(num_ind)
 
     frac_nan = 0.05
@@ -39,6 +59,7 @@ def generate_example_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r
 
 
 def col_corr(a_true, a_hat):
+    """Calculate pearson correlation coefficient between each column of a_true and a_hat"""
     corr = np.zeros(a_true.shape[1])
 
     for c in range(a_true.shape[1]):
@@ -48,7 +69,7 @@ def col_corr(a_true, a_hat):
 
     return corr
 
-
+# set the parameters of the synthetic data
 num_ind = 5000
 num_neurons = 100
 mean_r = 20
@@ -66,9 +87,11 @@ red_bleached, green_bleached, a_true, m_true = generate_example_data(num_ind, nu
                                                                      variance_a_true, variance_m_true,
                                                                      tau_a_true, tau_m_true)
 
+# interpolate out the nans in the data
 red_interp = cip.interpolate_over_nans(red_bleached)[0]
 green_interp = cip.interpolate_over_nans(green_bleached)[0]
 
+# divide out the photobleaching
 red = cip.photobleach_correction(red_interp)
 green = cip.photobleach_correction(green_interp)
 
@@ -99,8 +122,8 @@ green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
 red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
 ratio = (green_filtered + 1) / (red_filtered + 1) - 1
 
-# choose which neuron to plot
-plot_ind = 2
+# choose which neuron to plot and at what time indicies
+plot_ind = 0
 plot_start = 150
 plot_time = 100
 
@@ -140,7 +163,7 @@ plt.xlabel('time')
 plt.ylabel('activity')
 plt.show()
 
-# ratio vs AIM performance
+# ratio vs ACIM performance
 ratio_corelation_squared = col_corr(a_true, ratio) ** 2
 a_corelation_squared = col_corr(a_true, a_trained) ** 2
 

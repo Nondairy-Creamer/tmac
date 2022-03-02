@@ -4,23 +4,28 @@ import torch
 
 
 def interpolate_over_nans(input_mat, t=None):
-    # interpolation the input matrix to get rid of NaN values
+    """ Function to interpolate over NaN values along the first dimension of a matrix
 
+    Args:
+        input_mat: numpy array, [time, neurons]
+        t: optional time vector, only useful if input_mat is not sampled regularly in time
+
+    Returns: Interpolated input_mat, interpolated time
+    """
+
+    # if t is not specified, assume it has been sampled at regular intervals
     if t is None:
         t = np.arange(input_mat.shape[0])
 
-    # interpolate to get rid of NaN
     output_mat = np.zeros(input_mat.shape)
 
-    # calculate the sample rate of the input t
+    # calculate the average sample rate and uses this to create an interpolated t
     sample_rate = 1 / np.mean(np.diff(t, axis=0))
-
-    # get evenly spaced t values
     t_interp = np.arange(input_mat.shape[0]) / sample_rate
 
-    # loop through each column of the data
+    # loop through each column of the data and interpolate them separately
     for c in range(input_mat.shape[1]):
-        # check if all the data is nan
+        # check if all the data is nan and skip if it is
         if np.all(np.isnan(input_mat[:, c])):
             print('column ' + str(c) + ' is all NaN, skipping')
             continue
@@ -40,6 +45,19 @@ def interpolate_over_nans(input_mat, t=None):
 
 
 def photobleach_correction(time_by_neurons, t=None):
+    """ Function to fit an exponential with a shared tau to all the columns of time_by_neurons
+
+    This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
+    between every column in time_by_neurons. A is an amplitude vector that is fit separately for each column. The
+    correction is time_by_neurons / exp(-t / tau), preserving the amplitude of the data.
+
+    Args:
+        time_by_neurons: numpy array [time, neurons]
+        t: optional, only important if time_by_neurons is not sampled evenly in time
+
+    Returns: time_by_neurons divided by the exponential
+    """
+
     if t is None:
         t = np.arange(time_by_neurons.shape[0])
     device = 'cpu'
@@ -50,7 +68,6 @@ def photobleach_correction(time_by_neurons, t=None):
     t_mat = torch.tile(t_torch[:, None], [1, time_by_neurons.shape[1]])
     time_by_neurons_torch = torch.tensor(time_by_neurons, dtype=dtype, device=device)
 
-    # p0 = [np.mean(time_by_neurons, axis=0, keepdims=True), t[-1]/2]
     tau_0 = t[-1, None]/2
     a_0 = np.mean(time_by_neurons, axis=0)
     p_0 = np.concatenate((tau_0, a_0), axis=0)

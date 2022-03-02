@@ -27,8 +27,8 @@ Also included are two preprocessing functions. A function to linearly interpolat
 import calcium_inference.calcium_inference_models as cim
 import calcium_inference.preprocessing as cip
 
-red_interp, t_interp = cip.interpolate_over_nans(red, t)
-green_interp = cip.interpolate_over_nans(green, t)[0]
+red_interp = cip.interpolate_over_nans(red)[0]
+green_interp = cip.interpolate_over_nans(green)[0]
 
 red_corrected = cip.photobleach_correction(red_interp)
 green_corrected = cip.photobleach_correction(green_interp)

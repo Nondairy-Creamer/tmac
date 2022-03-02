@@ -3,6 +3,7 @@ import torch
 
 
 def get_fourier_freq(t_max):
+    """Returns the frequencies for a vector of length t_max"""
     n_cos = np.ceil((t_max + 1) / 2)  # number of cosine terms (positive freqs)
     n_sin = np.floor((t_max - 1) / 2)  # number of sine terms (negative freqs)
     w_cos = np.arange(0, n_cos)  # cosine freqs
@@ -14,6 +15,8 @@ def get_fourier_freq(t_max):
 
 
 def real_fft(x, n=None):
+    """Performs a real discrete 1D Fourier transform of the columns of x"""
+
     single_vec = False
     if len(x.shape) == 1:
         single_vec = True
@@ -40,6 +43,8 @@ def real_fft(x, n=None):
 
 
 def real_ifft(x_hat, n=None):
+    """Performs an inverse of a real discrete 1D Fourier transform of the columns of x"""
+
     single_vec = False
     if len(x_hat.shape) == 1:
         single_vec = True
@@ -73,6 +78,8 @@ def real_ifft(x_hat, n=None):
 
 
 def get_fourier_basis(n_ind):
+    """Returns an orthonormal real Fourier basis for a vector of length n_ind"""
+
     n_cos = (np.ceil((n_ind + 1) / 2))
     n_sin = (np.floor((n_ind - 1) / 2))
 

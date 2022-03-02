@@ -19,7 +19,6 @@ setup(
 
     keywords=['python', 'calcium', 'inference', 'two-channel', 'imaging'],
     classifiers=[
-        "Intended Audience :: Education",
         "Programming Language :: Python :: 3",
     ]
 )

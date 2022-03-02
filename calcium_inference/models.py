@@ -8,6 +8,21 @@ import calcium_inference.fourier as cif
 
 
 def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose=False):
+    """ Implementation of the additive_calcium_inference_model (ACIM)
+
+    This code takes in imaging fluoresence data from two simultaneously recorded channels and attempts to remove
+    shared motion artifacts between the two channels
+
+    Args:
+        red_np: numpy array, [time, neurons], activity independent channel
+        green_np: numpy array, [time, neurons], activity dependent channel
+        optimizer: string, scipy optimizer
+        verbose: boolean, if true, outputs when inference is complete on each neuron and estimates time to finish
+
+    Returns: a dictionary containing: all the inferred parameters of the model
+    """
+
+    # optimization is performed using Scipy optimize, so all tensors should stay on the CPU
     device = 'cpu'
     dtype = torch.float64
 
@@ -56,23 +71,23 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
 
         # define the evidence loss function. This function takes in and returns pytorch tensors
         def evidence_loss_fn(training_variables):
-            return -cipd.gp_additive_fft_circ(red[:, n], red_fft[:, n], training_variables[0],
+            return -cipd.acim_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
                                             green[:, n], green_fft[:, n], training_variables[1],
-                                              training_variables[2], training_variables[3],
-                                              training_variables[4], training_variables[5])[0]
+                                                     training_variables[2], training_variables[3],
+                                                     training_variables[4], training_variables[5])
 
         # a wrapper function of evidence that takes in and returns numpy variables
         def evidence_loss_fn_np(training_variables_in):
             training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device)
             return evidence_loss_fn(training_variables).numpy()
 
-        # wrapper function of for jacobian of the evidence that takes in and returns numpy variables
+        # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
         def evidence_loss_jacobian_np(training_variables_in):
             training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device, requires_grad=True)
             loss = evidence_loss_fn(training_variables)
             return torch.autograd.grad(loss, training_variables, create_graph=False)[0].numpy()
 
-        # optimization function with jacobian from pytorch
+        # optimization function with Jacobian from pytorch
         trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
                                               jac=evidence_loss_jacobian_np,
                                               method=optimizer)
@@ -80,9 +95,9 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step
         trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
-        a, m = cipd.gp_additive_fft_circ(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
-                                         trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
-                                         calculate_posterior=True)[1:]
+        a, m = cipd.acim_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
+                                                trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
+                                                calculate_posterior=True)
 
         a_trained[:, n] = a.numpy()
         m_trained[:, n] = m.numpy()
@@ -95,7 +110,7 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
 
         if verbose:
             decimals = 1e3
-            # print out timing stuff
+            # print out timing
             elapsed = time.time() - start
             remaining = elapsed / (n + 1) * (red_np.shape[1] - (n + 1))
             elapsed_truncated = np.round(elapsed * decimals) / decimals
@@ -117,11 +132,18 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
 
 
 def initialize_length_scale(y):
+    """ Function to fit a Gaussian to the autocorrelation of y
+
+    Args:
+        y: numpy vector
+
+    Returns: Standard deviation of a Gaussian fit to the autocorrelation of y
+    """
+
     x = np.arange(-len(y)/2, len(y)/2) + 0.5
     y_corr = np.correlate(y, y, mode='same')
 
     # fit the std of a gaussian to the correlation function
-
     def loss(p):
         return p[0] * norm.pdf(x, 0, p[1]) - y_corr
 

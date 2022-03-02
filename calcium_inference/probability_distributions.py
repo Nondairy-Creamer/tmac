@@ -3,16 +3,38 @@ import numpy as np
 import calcium_inference.fourier as cif
 
 
-def gp_additive_fft_circ(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
-                         log_variance_a, log_length_scale_a, log_variance_m, log_length_scale_m,
-                         threshold=1e8, calculate_posterior=False):
+def acim_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
+                                log_variance_a, log_tau_a, log_variance_m, log_tau_m,
+                                threshold=1e8, calculate_posterior=False):
+    """ Additive calcium inference model evidence and posterior distribution
+
+    Args:
+        r: red channel
+        fourier_r: fourier transform of the red channel
+        log_variance_r_noise: log of the variance of the red channel Gaussian noise
+        g: green channel
+        fourier_g: fourier transform of the green channel
+        log_variance_g_noise: log of the variance of the green channel Gaussian noise
+        log_variance_a: log of the variance of the activity
+        log_tau_a: log of the timescale of the activity
+        log_variance_m: log of the variance of the motion artifact
+        log_tau_m: log of the timescale of the motion artifact
+        threshold: maximum condition number of the radial basis function kernel for the Gaussian process
+        calculate_posterior: boolean, whether to calculate the posterior
+
+    if calculate_posterior:
+        Returns: a_hat, m_hat
+    else:
+        Returns: log probability of the evidence
+    """
+
     # exponentiate the log variances and invert the noise variances
     variance_r_noise = torch.exp(log_variance_r_noise)
     variance_g_noise = torch.exp(log_variance_g_noise)
     variance_a = torch.exp(log_variance_a)
-    length_scale_a = torch.exp(log_length_scale_a)
+    length_scale_a = torch.exp(log_tau_a)
     variance_m = torch.exp(log_variance_m)
-    length_scale_m = torch.exp(log_length_scale_m)
+    length_scale_m = torch.exp(log_tau_m)
 
     variance_r_noise_inv = 1 / variance_r_noise
     variance_g_noise_inv = 1 / variance_g_noise
@@ -84,11 +106,11 @@ def gp_additive_fft_circ(r, fourier_r, log_variance_r_noise, g, fourier_g, log_v
         m_padded[frequencies_to_keep] = m_fft
         a_padded[frequencies_to_keep] = a_fft
 
-        m_mean = cif.real_ifft(m_padded)
-        a_mean = cif.real_ifft(a_padded)
-    else:
-        m_mean = None
-        a_mean = None
+        m_hat = cif.real_ifft(m_padded)
+        a_hat = cif.real_ifft(a_padded)
 
-    return torch.mean(obj), a_mean, m_mean
+        return a_hat, m_hat
+
+    else:
+        return torch.mean(obj)
 
