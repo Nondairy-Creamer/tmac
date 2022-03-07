@@ -1,5 +1,6 @@
 import numpy as np
 import calcium_inference.fourier as cif
+from scipy import stats, signal
 
 
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
@@ -62,3 +63,16 @@ def col_corr(a_true, a_hat):
         corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
 
     return corr
+
+
+def ratio_model(red, green, tau):
+    # calculate the prediction from the ratio model
+    num_std = 3
+    filter_std = tau
+    filter_x = np.arange(filter_std * num_std * 2) - filter_std * num_std
+    filter_shape = stats.norm.pdf(filter_x / filter_std) / filter_std
+    green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
+    red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
+    ratio = (green_filtered + 1) / (red_filtered + 1) - 1
+
+    return ratio

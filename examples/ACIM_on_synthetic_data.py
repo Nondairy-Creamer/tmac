@@ -1,10 +1,10 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy import stats, signal
 import calcium_inference.models as cim
 import calcium_inference.preprocessing as cip
 from synthetic_data import generate_synthetic_data
 from synthetic_data import col_corr
+from synthetic_data import ratio_model
 
 
 # set the parameters of the synthetic data
@@ -53,13 +53,7 @@ length_scale_a_trained = trained_variables['length_scale_a']
 length_scale_m_trained = trained_variables['length_scale_m']
 
 # calculate the prediction from the ratio model
-num_std = 3
-filter_std = tau_a_true
-filter_x = np.arange(filter_std * num_std * 2) - filter_std * num_std
-filter_shape = stats.norm.pdf(filter_x / filter_std) / filter_std
-green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
-red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
-ratio = (green_filtered + 1) / (red_filtered + 1) - 1
+ratio = ratio_model(red, green, tau_a_true)
 
 # choose which neuron to plot and at what time indicies
 plot_ind = 0
