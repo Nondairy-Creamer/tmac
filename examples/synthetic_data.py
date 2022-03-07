@@ -50,3 +50,15 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     green_bleached[ind_to_nan, :] = np.array('nan')
 
     return red_bleached, green_bleached, a, m
+
+
+def col_corr(a_true, a_hat):
+    """Calculate pearson correlation coefficient between each column of a_true and a_hat"""
+    corr = np.zeros(a_true.shape[1])
+
+    for c in range(a_true.shape[1]):
+        true_vec = a_true[:, c]
+        hat_vec = a_hat[:, c]
+        corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
+
+    return corr

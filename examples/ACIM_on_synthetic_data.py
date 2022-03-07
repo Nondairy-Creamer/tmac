@@ -4,18 +4,8 @@ from scipy import stats, signal
 import calcium_inference.models as cim
 import calcium_inference.preprocessing as cip
 from synthetic_data import generate_synthetic_data
+from synthetic_data import col_corr
 
-
-def col_corr(a_true, a_hat):
-    """Calculate pearson correlation coefficient between each column of a_true and a_hat"""
-    corr = np.zeros(a_true.shape[1])
-
-    for c in range(a_true.shape[1]):
-        true_vec = a_true[:, c]
-        hat_vec = a_hat[:, c]
-        corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
-
-    return corr
 
 # set the parameters of the synthetic data
 num_ind = 5000
@@ -34,7 +24,7 @@ frac_nan = 0.05
 red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,
                                                                        variance_noise_r_true, variance_noise_g_true,
                                                                        variance_a_true, variance_m_true,
-                                                                       tau_a_true, tau_m_true, frac_nan)
+                                                                        tau_a_true, tau_m_true, frac_nan)
 
 # divide out the photobleaching
 red_corrected = cip.photobleach_correction(red_bleached)
