@@ -2,60 +2,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy import stats, signal
 import calcium_inference.models as cim
-import calcium_inference.fourier as cif
 import calcium_inference.preprocessing as cip
-
-
-def generate_example_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
-                          variance_a, variance_m, tau_a, tau_m):
-    """ Function that generates synthetic two channel imaging data
-
-    Args:
-        num_ind: number of measurements in time
-        num_neurons: number of neurons recorded
-        mean_r: mean fluoresence of the red channel
-        mean_g: mean fluoresence of the green channel
-        variance_noise_r: variance of the gaussian noise in the red channel
-        variance_noise_g: variance of the gaussian noise in the green channel
-        variance_a: variance of the calcium activity
-        variance_m: variance of the motion artifact
-        tau_a: timescale of the calcium activity
-        tau_m: timescale of the motion artifact
-
-    Returns:
-        red_bleached: synthetic red channel data (motion + noise)
-        green_bleached: synthetic green channel data (activity + motion + noise)
-        a: activity Gaussian process
-        m: motion artifact Gaussian process
-    """
-    fourier_basis, frequency_vec = cif.get_fourier_basis(num_ind)
-
-    frac_nan = 0.05
-
-    # get the diagonal of radial basis kernel in fourier space
-    c_diag_a = variance_a * tau_a * np.sqrt(2 * np.pi) * np.exp(-0.5 * frequency_vec**2 * tau_a**2)
-    c_diag_m = variance_m * tau_m * np.sqrt(2 * np.pi) * np.exp(-0.5 * frequency_vec**2 * tau_m**2)
-
-    a = fourier_basis @ (np.sqrt(c_diag_a[:, None]) * np.random.randn(num_ind, num_neurons))
-    m = fourier_basis @ (np.sqrt(c_diag_m[:, None]) * np.random.randn(num_ind, num_neurons))
-
-    noise_r = np.sqrt(variance_noise_r) * np.random.randn(num_ind, num_neurons)
-    noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
-
-    red_true = mean_r * (m + noise_r + 1)
-    green_true = mean_g * ((a + 1) * (m + 1) + noise_g)
-
-    # add photobleaching
-    photo_tau = num_ind / 2
-    red_bleached = red_true * np.exp(-np.arange(num_ind)[:, None] / photo_tau)
-    green_bleached = green_true * np.exp(-np.arange(num_ind)[:, None] / photo_tau)
-
-    # nan a few values
-    ind_to_nan = np.random.rand(num_ind) <= frac_nan
-    red_bleached[ind_to_nan, :] = np.array('nan')
-    green_bleached[ind_to_nan, :] = np.array('nan')
-
-    return red_bleached, green_bleached, a, m
+from synthetic_data import generate_synthetic_data
 
 
 def col_corr(a_true, a_hat):
@@ -80,20 +28,21 @@ variance_a_true = 0.5**2
 variance_m_true = 0.5**2
 tau_a_true = 4
 tau_m_true = 4
+frac_nan = 0.05
 
 # generate synthetic data
-red_bleached, green_bleached, a_true, m_true = generate_example_data(num_ind, num_neurons, mean_r, mean_g,
-                                                                     variance_noise_r_true, variance_noise_g_true,
-                                                                     variance_a_true, variance_m_true,
-                                                                     tau_a_true, tau_m_true)
-
-# interpolate out the nans in the data
-red_interp = cip.interpolate_over_nans(red_bleached)[0]
-green_interp = cip.interpolate_over_nans(green_bleached)[0]
+red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,
+                                                                       variance_noise_r_true, variance_noise_g_true,
+                                                                       variance_a_true, variance_m_true,
+                                                                       tau_a_true, tau_m_true, frac_nan)
 
 # divide out the photobleaching
-red = cip.photobleach_correction(red_interp)
-green = cip.photobleach_correction(green_interp)
+red_corrected = cip.photobleach_correction(red_bleached)
+green_corrected = cip.photobleach_correction(green_bleached)
+
+# interpolate out the nans in the data
+red = cip.interpolate_over_nans(red_corrected)[0]
+green = cip.interpolate_over_nans(green_corrected)[0]
 
 # infer the model parameters
 trained_variables = cim.additive_calcium_inference_model(red, green, verbose=True)

@@ -49,7 +49,8 @@ def photobleach_correction(time_by_neurons, t=None):
 
     This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
     between every column in time_by_neurons. A is an amplitude vector that is fit separately for each column. The
-    correction is time_by_neurons / exp(-t / tau), preserving the amplitude of the data.
+    correction is time_by_neurons / exp(-t / tau), preserving the amplitude of the data. This function works even with
+    NaNs in the data
 
     Args:
         time_by_neurons: numpy array [time, neurons]
@@ -74,7 +75,7 @@ def photobleach_correction(time_by_neurons, t=None):
 
     def loss_fn(p):
         exponential = p[None, 1:] * torch.exp(-t_mat / p[0])
-        return ((exponential - time_by_neurons_torch)**2).sum()
+        return ((exponential - time_by_neurons_torch)**2).nanmean()
 
     def loss_fn_np(p_in):
         p = torch.tensor(p_in, dtype=dtype, device=device)
