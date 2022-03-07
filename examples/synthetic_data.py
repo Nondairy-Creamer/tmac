@@ -3,6 +3,10 @@ import calcium_inference.fourier as cif
 from scipy import stats, signal
 
 
+def softplus(x, b=1):
+    return np.log(1 + np.exp(b * x)) / b
+
+
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
                             variance_a, variance_m, tau_a, tau_m, frac_nan=0.0):
     """ Function that generates synthetic two channel imaging data
@@ -25,6 +29,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         a: activity Gaussian process
         m: motion artifact Gaussian process
     """
+    softplus_param = 20
     fourier_basis, frequency_vec = cif.get_fourier_basis(num_ind)
 
     # get the diagonal of radial basis kernel in fourier space
@@ -37,8 +42,8 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     noise_r = np.sqrt(variance_noise_r) * np.random.randn(num_ind, num_neurons)
     noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
 
-    red_true = mean_r * (m + noise_r + 1)
-    green_true = mean_g * ((a + 1) * (m + 1) + noise_g)
+    red_true = mean_r * softplus(m + noise_r + 1, b=softplus_param)
+    green_true = mean_g * softplus((a + 1) * (m + 1) + noise_g, b=softplus_param)
 
     # add photobleaching
     photo_tau = num_ind / 2
@@ -67,12 +72,16 @@ def col_corr(a_true, a_hat):
 
 def ratio_model(red, green, tau):
     # calculate the prediction from the ratio model
+    # assumes red
+    red = red / np.mean(red, axis=0)
+    green = green / np.mean(green, axis=0)
+
     num_std = 3
     filter_std = tau
     filter_x = np.arange(filter_std * num_std * 2) - filter_std * num_std
     filter_shape = stats.norm.pdf(filter_x / filter_std) / filter_std
     green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
     red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
-    ratio = (green_filtered + 1) / (red_filtered + 1) - 1
+    ratio = green_filtered / red_filtered - 1
 
     return ratio

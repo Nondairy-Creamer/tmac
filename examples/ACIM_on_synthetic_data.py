@@ -16,8 +16,8 @@ variance_noise_r_true = 0.2**2
 variance_noise_g_true = 0.2**2
 variance_a_true = 0.5**2
 variance_m_true = 0.5**2
-tau_a_true = 4
-tau_m_true = 4
+tau_a_true = 2
+tau_m_true = 2
 frac_nan = 0.05
 
 # generate synthetic data
@@ -38,10 +38,6 @@ green = cip.interpolate_over_nans(green_corrected)[0]
 trained_variables = cim.additive_calcium_inference_model(red, green, verbose=True)
 
 ## Plotting ##
-# convert both channels into fold change from the mean and subtract off the mean
-red = red / np.mean(red, axis=0) - 1
-green = green / np.mean(green, axis=0) - 1
-
 # pull out the trained variables
 a_trained = trained_variables['a']
 m_trained = trained_variables['m']
@@ -97,16 +93,24 @@ plt.ylabel('activity')
 plt.show()
 
 # ratio vs ACIM performance
-ratio_corelation_squared = col_corr(a_true, ratio) ** 2
-a_corelation_squared = col_corr(a_true, a_trained) ** 2
+ratio_corelation_squared = col_corr(a_true, ratio)**2
+acim_corelation_squared = col_corr(a_true, a_trained) ** 2
 
 plt.figure()
-plt.violinplot([ratio_corelation_squared, a_corelation_squared])
-axes = plt.gca()
+axes = plt.subplot(1, 2, 1)
+plt.violinplot([ratio_corelation_squared, acim_corelation_squared])
 axes.set_ylim([0, 1])
 plt.ylabel('correlation squared')
 axes.set_xticks([1, 2])
 axes.set_xticklabels(['ratio', 'inference'])
+axes = plt.subplot(1, 2, 2)
+plt.violinplot(acim_corelation_squared - ratio_corelation_squared)
+lims = np.array(axes.get_ylim())
+lim_to_use = np.max(np.abs(lims))
+axes.set_ylim([-lim_to_use, lim_to_use])
+plt.plot([0.5, 1.5], [0, 0], '-k')
+axes.set_xticks([1])
+axes.set_xticklabels(['inference - ratio score'])
 plt.show()
 
 # Plot scatter plot of true activity against inferred activity
