@@ -19,7 +19,7 @@ variance_m_true = 0.3**2
 tau_a_true = 4
 tau_m_true = 4
 frac_nan = 0.05
-beta = 100
+beta = 50
 
 # generate synthetic data
 red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,
