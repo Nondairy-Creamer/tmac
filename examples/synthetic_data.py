@@ -3,7 +3,7 @@ import calcium_inference.fourier as cif
 from scipy import stats, signal
 
 
-def softplus(x, beta=100):
+def softplus(x, beta=50):
     return np.log(1 + np.exp(beta * x)) / beta
 
 
