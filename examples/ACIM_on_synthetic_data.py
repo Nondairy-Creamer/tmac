@@ -12,19 +12,21 @@ num_ind = 5000
 num_neurons = 100
 mean_r = 20
 mean_g = 30
-variance_noise_r_true = 0.2**2
-variance_noise_g_true = 0.2**2
-variance_a_true = 0.5**2
-variance_m_true = 0.5**2
+variance_noise_r_true = 0.02**2
+variance_noise_g_true = 0.02**2
+variance_a_true = 0.3**2
+variance_m_true = 0.3**2
 tau_a_true = 2
 tau_m_true = 2
 frac_nan = 0.05
+beta = 20
 
 # generate synthetic data
 red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,
                                                                        variance_noise_r_true, variance_noise_g_true,
                                                                        variance_a_true, variance_m_true,
-                                                                        tau_a_true, tau_m_true, frac_nan)
+                                                                       tau_a_true, tau_m_true,
+                                                                       frac_nan=frac_nan, beta=beta)
 
 # divide out the photobleaching
 red_corrected = cip.photobleach_correction(red_bleached)

@@ -3,12 +3,12 @@ import calcium_inference.fourier as cif
 from scipy import stats, signal
 
 
-def softplus(x, b=1):
-    return np.log(1 + np.exp(b * x)) / b
+def softplus(x, beta=20):
+    return np.log(1 + np.exp(beta * x)) / beta
 
 
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
-                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0):
+                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20):
     """ Function that generates synthetic two channel imaging data
 
     Args:
@@ -22,6 +22,8 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         variance_m: variance of the motion artifact
         tau_a: timescale of the calcium activity
         tau_m: timescale of the motion artifact
+        frac_nan: fraction of time points to set to NaN
+        beta: parameter of softplus to keep values from going negative
 
     Returns:
         red_bleached: synthetic red channel data (motion + noise)
@@ -29,7 +31,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         a: activity Gaussian process
         m: motion artifact Gaussian process
     """
-    softplus_param = 20
+
     fourier_basis, frequency_vec = cif.get_fourier_basis(num_ind)
 
     # get the diagonal of radial basis kernel in fourier space
@@ -39,11 +41,14 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     a = fourier_basis @ (np.sqrt(c_diag_a[:, None]) * np.random.randn(num_ind, num_neurons))
     m = fourier_basis @ (np.sqrt(c_diag_m[:, None]) * np.random.randn(num_ind, num_neurons))
 
+    a = softplus(a + 1, beta=beta)
+    m = softplus(m + 1, beta=beta)
+
     noise_r = np.sqrt(variance_noise_r) * np.random.randn(num_ind, num_neurons)
     noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
 
-    red_true = mean_r * softplus(m + noise_r + 1, b=softplus_param)
-    green_true = mean_g * softplus((a + 1) * (m + 1) + noise_g, b=softplus_param)
+    red_true = mean_r * softplus(m + noise_r, beta=beta)
+    green_true = mean_g * softplus(a * m + noise_g, beta=beta)
 
     # add photobleaching
     photo_tau = num_ind / 2
@@ -55,7 +60,9 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     red_bleached[ind_to_nan, :] = np.array('nan')
     green_bleached[ind_to_nan, :] = np.array('nan')
 
-    return red_bleached, green_bleached, a, m
+    # mean subtract a and m before returning
+
+    return red_bleached, green_bleached, a-1, m-1
 
 
 def col_corr(a_true, a_hat):
@@ -77,9 +84,9 @@ def ratio_model(red, green, tau):
     green = green / np.mean(green, axis=0)
 
     num_std = 3
-    filter_std = tau
-    filter_x = np.arange(filter_std * num_std * 2) - filter_std * num_std
-    filter_shape = stats.norm.pdf(filter_x / filter_std) / filter_std
+    num_filter_ind = np.round(tau * num_std) * 2 + 1
+    filter_x = np.arange(num_filter_ind) - (num_filter_ind - 1) / 2
+    filter_shape = stats.norm.pdf(filter_x / tau) / tau
     green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
     red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
     ratio = green_filtered / red_filtered - 1
