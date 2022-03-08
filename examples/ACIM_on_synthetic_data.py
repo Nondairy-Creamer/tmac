@@ -12,12 +12,12 @@ num_ind = 5000
 num_neurons = 100
 mean_r = 20
 mean_g = 30
-variance_noise_r_true = 0.02**2
-variance_noise_g_true = 0.02**2
+variance_noise_r_true = 0.2**2
+variance_noise_g_true = 0.2**2
 variance_a_true = 0.3**2
 variance_m_true = 0.3**2
-tau_a_true = 2
-tau_m_true = 2
+tau_a_true = 4
+tau_m_true = 4
 frac_nan = 0.05
 beta = 20
 
@@ -108,9 +108,9 @@ axes.set_xticklabels(['ratio', 'inference'])
 axes = plt.subplot(1, 2, 2)
 plt.violinplot(acim_corelation_squared - ratio_corelation_squared)
 lims = np.array(axes.get_ylim())
-lim_to_use = np.max(np.abs(lims))
-axes.set_ylim([-lim_to_use, lim_to_use])
-plt.plot([0.5, 1.5], [0, 0], '-k')
+lim_to_use = np.max(np.abs(lims - 1))
+axes.set_ylim([-lim_to_use + 1, lim_to_use + 1])
+plt.plot([0.5, 1.5], [1, 1], '-k')
 axes.set_xticks([1])
 axes.set_xticklabels(['inference - ratio score'])
 plt.show()
