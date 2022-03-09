@@ -16,17 +16,18 @@ variance_noise_r_true = 0.2**2
 variance_noise_g_true = 0.2**2
 variance_a_true = 0.3**2
 variance_m_true = 0.3**2
-tau_a_true = 4
-tau_m_true = 4
+tau_a_true = 3
+tau_m_true = 3
 frac_nan = 0.05
-beta = 50
+beta = 20
 
 # generate synthetic data
 red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,
                                                                        variance_noise_r_true, variance_noise_g_true,
                                                                        variance_a_true, variance_m_true,
                                                                        tau_a_true, tau_m_true,
-                                                                       frac_nan=frac_nan, beta=beta)
+                                                                       frac_nan=frac_nan, beta=beta,
+                                                                       multiplicative=False)
 
 # divide out the photobleaching
 red_corrected = cip.photobleach_correction(red_bleached)
@@ -51,7 +52,7 @@ length_scale_a_trained = trained_variables['length_scale_a']
 length_scale_m_trained = trained_variables['length_scale_m']
 
 # calculate the prediction from the ratio model
-ratio = ratio_model(red, green, tau_a_true)
+ratio = ratio_model(red, green, tau_a_true / 2)
 
 # choose which neuron to plot and at what time indicies
 plot_ind = 0
@@ -92,6 +93,7 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.legend(['m_true', 'm_trained'])
 plt.xlabel('time')
 plt.ylabel('activity')
+plt.savefig('acim_ratio_true_traces.pdf')
 plt.show()
 
 # ratio vs ACIM performance
@@ -113,6 +115,7 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.plot([0.5, 1.5], [0, 0], '-k')
 axes.set_xticks([1])
 axes.set_xticklabels(['inference - ratio score'])
+plt.savefig('acim_vs_ratio_performance.pdf')
 plt.show()
 
 # Plot scatter plot of true activity against inferred activity
@@ -139,5 +142,6 @@ plt.violinplot([length_scale_a_trained, length_scale_m_trained])
 plt.scatter(np.arange(1, 3), [tau_a_true, tau_m_true], color='g', marker='x')
 ylim = axes.get_ylim()
 axes.set_ylim([0, ylim[1]])
+plt.savefig('hyperparameters.pdf')
 plt.show()
 

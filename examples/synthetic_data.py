@@ -8,7 +8,7 @@ def softplus(x, beta=50):
 
 
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
-                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20):
+                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20, multiplicative=True):
     """ Function that generates synthetic two channel imaging data
 
     Args:
@@ -48,7 +48,11 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
 
     red_true = mean_r * softplus(m + noise_r, beta=beta)
-    green_true = mean_g * softplus(a * m + noise_g, beta=beta)
+
+    if multiplicative:
+        green_true = mean_g * softplus(a * m + noise_g, beta=beta)
+    else:
+        green_true = mean_g * softplus(a + m - 1 + noise_g, beta=beta)
 
     # add photobleaching
     photo_tau = num_ind / 2
@@ -62,7 +66,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
 
     # mean subtract a and m before returning
 
-    return red_bleached, green_bleached, a-1, m-1
+    return red_bleached, green_bleached, a - 1, m - 1
 
 
 def col_corr(a_true, a_hat):
