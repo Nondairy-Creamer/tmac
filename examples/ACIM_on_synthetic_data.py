@@ -60,8 +60,18 @@ plot_start = 150
 plot_time = 100
 
 plt.figure()
-# plot the true activity against the inferred activity
+green_fold_change = green / np.mean(green, axis=0) - 1
+# plot the green fluorescence
 axes = plt.subplot(3, 1, 1)
+plt.plot(green_fold_change[plot_start:plot_start+plot_time, plot_ind])
+plt.plot([0, plot_time], [0, 0])
+lims = axes.get_ylim()
+lim_to_use = np.max(np.abs(lims))
+axes.set_ylim([-lim_to_use, lim_to_use])
+plt.legend(['green'])
+
+# plot the true activity against the inferred activity
+axes = plt.subplot(3, 1, 2)
 plt.plot(a_true[plot_start:plot_start+plot_time, plot_ind])
 plt.plot(a_trained[plot_start:plot_start+plot_time, plot_ind])
 plt.plot([0, plot_time], [0, 0])
@@ -70,19 +80,7 @@ lim_to_use = np.max(np.abs(lims))
 axes.set_ylim([-lim_to_use, lim_to_use])
 plt.legend(['a_true', 'a_trained'])
 
-# plot the true activity against the ratio model
-axes = plt.subplot(3, 1, 2)
-plt.plot(a_true[plot_start:plot_start+plot_time, plot_ind])
-plt.plot(ratio[plot_start:plot_start+plot_time, plot_ind])
-plt.plot([0, plot_time], [0, 0])
-lims = axes.get_ylim()
-lim_to_use = np.max(np.abs(lims))
-axes.set_ylim([-lim_to_use, lim_to_use])
-plt.legend(['a_true', 'ratio'])
-plt.xlabel('time')
-plt.ylabel('neural activity')
-
-# plot the true motion artifact against the inferred motion artifact
+# plot the motion artifact
 axes = plt.subplot(3, 1, 3)
 plt.plot(m_true[plot_start:plot_start+plot_time, plot_ind])
 plt.plot(m_trained[plot_start:plot_start+plot_time, plot_ind])
@@ -93,7 +91,6 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.legend(['m_true', 'm_trained'])
 plt.xlabel('time')
 plt.ylabel('activity')
-plt.savefig('acim_ratio_true_traces.pdf')
 plt.show()
 
 # ratio vs ACIM performance
@@ -115,7 +112,6 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.plot([0.5, 1.5], [0, 0], '-k')
 axes.set_xticks([1])
 axes.set_xticklabels(['inference - ratio score'])
-plt.savefig('acim_vs_ratio_performance.pdf')
 plt.show()
 
 # Plot scatter plot of true activity against inferred activity
@@ -133,15 +129,20 @@ plt.show()
 plt.figure()
 axes = plt.subplot(1, 2, 1)
 plt.violinplot([variance_a_trained, variance_m_trained, variance_g_noise_trained, variance_r_noise_trained])
-plt.scatter(np.arange(1, 5), [variance_a_true, variance_m_true, variance_noise_g_true, variance_noise_r_true], color='g', marker='x')
+plt.scatter(np.arange(1, 5), [variance_a_true, variance_m_true, variance_noise_g_true, variance_noise_r_true], color='g', marker='o')
 ylim = axes.get_ylim()
 axes.set_ylim([0, ylim[1]])
+axes.set_xticks(np.arange(4) + 1)
+axes.set_xticklabels(['var_a', 'var_m', 'var_g', 'var_r'])
+plt.ylabel('parameter value')
+plt.legend(['inferred', 'true'])
 
 axes = plt.subplot(1, 2, 2)
 plt.violinplot([length_scale_a_trained, length_scale_m_trained])
-plt.scatter(np.arange(1, 3), [tau_a_true, tau_m_true], color='g', marker='x')
+plt.scatter(np.arange(1, 3), [tau_a_true, tau_m_true], color='g', marker='o')
 ylim = axes.get_ylim()
 axes.set_ylim([0, ylim[1]])
-plt.savefig('hyperparameters.pdf')
+axes.set_xticks(np.arange(2) + 1)
+axes.set_xticklabels(['tau_a', 'tau_m'])
 plt.show()
 
