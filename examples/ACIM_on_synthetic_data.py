@@ -61,9 +61,11 @@ plot_time = 100
 
 plt.figure()
 green_fold_change = green / np.mean(green, axis=0) - 1
+red_fold_change = red / np.mean(red, axis=0) - 1
 # plot the green fluorescence
 axes = plt.subplot(3, 1, 1)
 plt.plot(green_fold_change[plot_start:plot_start+plot_time, plot_ind])
+plt.plot(red_fold_change[plot_start:plot_start+plot_time, plot_ind])
 plt.plot([0, plot_time], [0, 0])
 lims = axes.get_ylim()
 lim_to_use = np.max(np.abs(lims))
@@ -91,6 +93,7 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.legend(['m_true', 'm_trained'])
 plt.xlabel('time')
 plt.ylabel('activity')
+plt.savefig('acim_traces.pdf')
 plt.show()
 
 # ratio vs ACIM performance
@@ -112,6 +115,7 @@ axes.set_ylim([-lim_to_use, lim_to_use])
 plt.plot([0.5, 1.5], [0, 0], '-k')
 axes.set_xticks([1])
 axes.set_xticklabels(['inference - ratio score'])
+plt.savefig('acim_vs_ratio.pdf')
 plt.show()
 
 # Plot scatter plot of true activity against inferred activity
@@ -144,5 +148,6 @@ ylim = axes.get_ylim()
 axes.set_ylim([0, ylim[1]])
 axes.set_xticks(np.arange(2) + 1)
 axes.set_xticklabels(['tau_a', 'tau_m'])
+plt.savefig('acim_vs_ratio_over_noise.pdf')
 plt.show()
 
