@@ -3,13 +3,14 @@ import torch
 import time
 from scipy import optimize
 from scipy.stats import norm
-import calcium_inference.probability_distributions as cipd
-import calcium_inference.fourier as cif
+import tmac.probability_distributions as cipd
+import tmac.fourier as cif
 
 
-def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose=False):
-    """ Implementation of the additive_calcium_inference_model (ACIM)
+def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
+    """ Implementation of the Two-channel motion artifact correction method (TMAC)
 
+    This is tmac_ac because it is the additive and circular boundary version
     This code takes in imaging fluoresence data from two simultaneously recorded channels and attempts to remove
     shared motion artifacts between the two channels
 
@@ -71,8 +72,8 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
 
         # define the evidence loss function. This function takes in and returns pytorch tensors
         def evidence_loss_fn(training_variables):
-            return -cipd.acim_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
-                                            green[:, n], green_fft[:, n], training_variables[1],
+            return -cipd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
+                                                     green[:, n], green_fft[:, n], training_variables[1],
                                                      training_variables[2], training_variables[3],
                                                      training_variables[4], training_variables[5])
 
@@ -95,7 +96,7 @@ def additive_calcium_inference_model(red_np, green_np, optimizer='BFGS', verbose
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step
         trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
-        a, m = cipd.acim_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
+        a, m = cipd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
                                                 trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
                                                 calculate_posterior=True)
 

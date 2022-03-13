@@ -1,12 +1,12 @@
 import torch
 import numpy as np
-import calcium_inference.fourier as cif
+import tmac.fourier as cif
 
 
-def acim_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
+def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
                                 log_variance_a, log_tau_a, log_variance_m, log_tau_m,
                                 threshold=1e8, calculate_posterior=False):
-    """ Additive calcium inference model evidence and posterior distribution
+    """ Two-channel motion artifact correction (TMAC) evidence and posterior distribution
 
     Args:
         r: red channel
@@ -43,8 +43,6 @@ def acim_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     dtype = r.dtype
 
     # calculate the gaussian process components in fourier space
-    # kernel = fourier_basis @ S @ fourier_basis.T
-    # since S is diagonal, we just return the diagonal compnents for the activity (a) and motion (m)
     t_max = r.shape[0]
 
     all_freq = cif.get_fourier_freq(t_max)

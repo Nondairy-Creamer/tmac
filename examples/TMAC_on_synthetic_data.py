@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
-import calcium_inference.models as cim
-import calcium_inference.preprocessing as cip
+import tmac.models as tm
+import tmac.preprocessing as tp
 from synthetic_data import generate_synthetic_data
 from synthetic_data import col_corr
 from synthetic_data import ratio_model
@@ -30,15 +30,15 @@ red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, 
                                                                        multiplicative=False)
 
 # divide out the photobleaching
-red_corrected = cip.photobleach_correction(red_bleached)
-green_corrected = cip.photobleach_correction(green_bleached)
+red_corrected = tp.photobleach_correction(red_bleached)
+green_corrected = tp.photobleach_correction(green_bleached)
 
 # interpolate out the nans in the data
-red = cip.interpolate_over_nans(red_corrected)[0]
-green = cip.interpolate_over_nans(green_corrected)[0]
+red = tp.interpolate_over_nans(red_corrected)[0]
+green = tp.interpolate_over_nans(green_corrected)[0]
 
 # infer the model parameters
-trained_variables = cim.additive_calcium_inference_model(red, green, verbose=True)
+trained_variables = tm.tmac_ac(red, green, verbose=True)
 
 ## Plotting ##
 # pull out the trained variables
@@ -95,19 +95,19 @@ plt.xlabel('time')
 plt.ylabel('activity')
 plt.show()
 
-# ratio vs ACIM performance
+# ratio vs TMAC performance
 ratio_corelation_squared = col_corr(a_true, ratio)**2
-acim_corelation_squared = col_corr(a_true, a_trained) ** 2
+tmac_corelation_squared = col_corr(a_true, a_trained) ** 2
 
 plt.figure()
 axes = plt.subplot(1, 2, 1)
-plt.violinplot([ratio_corelation_squared, acim_corelation_squared])
+plt.violinplot([ratio_corelation_squared, tmac_corelation_squared])
 axes.set_ylim([0, 1])
 plt.ylabel('correlation squared')
 axes.set_xticks([1, 2])
 axes.set_xticklabels(['ratio', 'inference'])
 axes = plt.subplot(1, 2, 2)
-plt.violinplot(acim_corelation_squared - ratio_corelation_squared)
+plt.violinplot(tmac_corelation_squared - ratio_corelation_squared)
 lims = np.array(axes.get_ylim())
 lim_to_use = np.max(np.abs(lims))
 axes.set_ylim([-lim_to_use, lim_to_use])

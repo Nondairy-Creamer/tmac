@@ -1,5 +1,5 @@
 import numpy as np
-import calcium_inference.fourier as cif
+import tmac.fourier as cif
 from scipy import stats, signal
 
 
