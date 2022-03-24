@@ -2,9 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import tmac.models as tm
 import tmac.preprocessing as tp
-from synthetic_data import generate_synthetic_data
-from synthetic_data import col_corr
-from synthetic_data import ratio_model
+from tmac.synthetic_data import generate_synthetic_data, col_corr, ratio_model
 
 
 # set the parameters of the synthetic data
