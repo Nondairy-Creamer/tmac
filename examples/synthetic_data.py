@@ -8,7 +8,7 @@ def softplus(x, beta=50):
 
 
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
-                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20, multiplicative=True):
+                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20, multiplicative=False):
     """ Function that generates synthetic two channel imaging data
 
     Args:
@@ -24,7 +24,8 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         tau_m: timescale of the motion artifact
         frac_nan: fraction of time points to set to NaN
         beta: parameter of softplus to keep values from going negative
-
+        multiplicative: generate data assuming a multiplicative interaction between a and m
+                        if false, generate data with additive interaction
     Returns:
         red_bleached: synthetic red channel data (motion + noise)
         green_bleached: synthetic green channel data (activity + motion + noise)
