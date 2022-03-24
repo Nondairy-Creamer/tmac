@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
-DESCRIPTION = 'Package for inferring latent calcium activity from two-channel imaging'
+VERSION = '0.1.0'
+DESCRIPTION = 'Two-channel motion artifact correction'
 
 # Setting up
 setup(
-    name="calcium_inference",
+    name="tmac",
     version=VERSION,
     author="Matthew S. Creamer",
     author_email="matthew.s.creamer@gmail.com",
@@ -17,7 +17,7 @@ setup(
                       'matplotlib',
                       ],
 
-    keywords=['python', 'calcium', 'inference', 'two-channel', 'imaging'],
+    keywords=['python', 'calcium', 'inference', 'two-channel', 'imaging', 'motion', 'correction'],
     classifiers=[
         "Programming Language :: Python :: 3",
     ]
