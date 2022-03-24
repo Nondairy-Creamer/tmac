@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/calcium_inference.iml" filepath="$PROJECT_DIR$/.idea/calcium_inference.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/tmac.iml" filepath="$PROJECT_DIR$/.idea/tmac.iml" />
     </modules>
   </component>
 </project>
