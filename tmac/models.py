@@ -3,8 +3,8 @@ import torch
 import time
 from scipy import optimize
 from scipy.stats import norm
-import tmac.probability_distributions as cipd
-import tmac.fourier as cif
+import tmac.probability_distributions as tpd
+import tmac.fourier as tfo
 
 
 def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
@@ -34,8 +34,8 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
     # convert to tensors and fourier transform
     red = torch.tensor(red_np, device=device, dtype=dtype)
     green = torch.tensor(green_np, device=device, dtype=dtype)
-    red_fft = cif.real_fft(red)
-    green_fft = cif.real_fft(green)
+    red_fft = tfo.real_fft(red)
+    green_fft = tfo.real_fft(green)
 
     # estimate all model parameters from the data
     variance_r_noise_init = np.var(red_np, axis=0)
@@ -72,10 +72,10 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
 
         # define the evidence loss function. This function takes in and returns pytorch tensors
         def evidence_loss_fn(training_variables):
-            return -cipd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
+            return -tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
                                                      green[:, n], green_fft[:, n], training_variables[1],
-                                                     training_variables[2], training_variables[3],
-                                                     training_variables[4], training_variables[5])
+                                                    training_variables[2], training_variables[3],
+                                                    training_variables[4], training_variables[5])
 
         # a wrapper function of evidence that takes in and returns numpy variables
         def evidence_loss_fn_np(training_variables_in):
@@ -96,9 +96,9 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step
         trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
-        a, m = cipd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
-                                                trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
-                                                calculate_posterior=True)
+        a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
+                                               trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
+                                               calculate_posterior=True)
 
         a_trained[:, n] = a.numpy()
         m_trained[:, n] = m.numpy()

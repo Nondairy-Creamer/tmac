@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-import tmac.fourier as cif
+import tmac.fourier as tfo
 
 
 def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
@@ -45,7 +45,7 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     # calculate the gaussian process components in fourier space
     t_max = r.shape[0]
 
-    all_freq = cif.get_fourier_freq(t_max)
+    all_freq = tfo.get_fourier_freq(t_max)
     all_freq = torch.tensor(all_freq, device=device, dtype=dtype)
     # smallest length scale (longest in fourier space)
     min_length = torch.min(length_scale_a.detach(), length_scale_m.detach())
@@ -104,8 +104,8 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
         m_padded[frequencies_to_keep] = m_fft
         a_padded[frequencies_to_keep] = a_fft
 
-        m_hat = cif.real_ifft(m_padded)
-        a_hat = cif.real_ifft(a_padded)
+        m_hat = tfo.real_ifft(m_padded)
+        a_hat = tfo.real_ifft(a_padded)
 
         return a_hat, m_hat
 

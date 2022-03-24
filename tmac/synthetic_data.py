@@ -1,5 +1,5 @@
 import numpy as np
-import tmac.fourier as cif
+import tmac.fourier as tfo
 from scipy import stats, signal
 
 
@@ -33,7 +33,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         m: motion artifact Gaussian process
     """
 
-    fourier_basis, frequency_vec = cif.get_fourier_basis(num_ind)
+    fourier_basis, frequency_vec = tfo.get_fourier_basis(num_ind)
 
     # get the diagonal of radial basis kernel in fourier space
     c_diag_a = variance_a * tau_a * np.sqrt(2 * np.pi) * np.exp(-0.5 * frequency_vec**2 * tau_a**2)
