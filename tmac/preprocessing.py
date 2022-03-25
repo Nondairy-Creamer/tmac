@@ -58,6 +58,9 @@ def photobleach_correction(time_by_neurons, t=None):
     Returns: time_by_neurons divided by the exponential
     """
 
+    if np.any(np.isnan(time_by_neurons)):
+        raise Exception('Photobleach correction cannot be performed with NaNs in data')
+
     if t is None:
         t = np.arange(time_by_neurons.shape[0])
     device = 'cpu'
