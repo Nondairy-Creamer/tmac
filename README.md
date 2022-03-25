@@ -9,7 +9,7 @@ pip install -e .
 ```
 
 ### Usage:
-To see an example on synthetic data, install the package into a python project, then run the script examples/TMAC_on_synthetic_data.py
+To see an example on synthetic data, install the package into a python project, then run the script examples/tmac_on_synthetic_data.py
 
 The model can be called in a python project with the following commands, where red and green are numpy matricies of the red and green fluorescence data.
 
