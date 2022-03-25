@@ -66,7 +66,6 @@ def photobleach_correction(time_by_neurons, t=None):
 
     # convert inputs to tensors
     t_torch = torch.tensor(t, dtype=dtype, device=device)
-    t_mat = torch.tile(t_torch[:, None], [1, time_by_neurons.shape[1]])
     time_by_neurons_torch = torch.tensor(time_by_neurons, dtype=dtype, device=device)
 
     tau_0 = t[-1, None]/2
@@ -74,7 +73,7 @@ def photobleach_correction(time_by_neurons, t=None):
     p_0 = np.concatenate((tau_0, a_0), axis=0)
 
     def loss_fn(p):
-        exponential = p[None, 1:] * torch.exp(-t_mat / p[0])
+        exponential = p[None, 1:] * torch.exp(-t_torch[:, None] / p[0])
         return ((exponential - time_by_neurons_torch)**2).nanmean()
 
     def loss_fn_np(p_in):
@@ -91,6 +90,6 @@ def photobleach_correction(time_by_neurons, t=None):
                               jac=loss_fn_jacobian_np,
                               method='BFGS')
 
-    time_by_neurons_corrected = time_by_neurons_torch / torch.exp(-t_mat / p_hat.x[0])
+    time_by_neurons_corrected = time_by_neurons_torch / torch.exp(-t_torch[:, None] / p_hat.x[0])
 
     return time_by_neurons_corrected.numpy()
