@@ -16,7 +16,7 @@ variance_a_true = 0.3**2
 variance_m_true = 0.3**2
 tau_a_true = 3
 tau_m_true = 3
-frac_nan = 0.05
+frac_nan = 0.20
 beta = 20
 
 # generate synthetic data
@@ -26,14 +26,13 @@ red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, 
                                                                        tau_a_true, tau_m_true,
                                                                        frac_nan=frac_nan, beta=beta,
                                                                        multiplicative=False)
+# interpolate out the nans in the data
+red_interp = tp.interpolate_over_nans(red_bleached)[0]
+green_interp = tp.interpolate_over_nans(green_bleached)[0]
 
 # divide out the photobleaching
-red_corrected = tp.photobleach_correction(red_bleached)
-green_corrected = tp.photobleach_correction(green_bleached)
-
-# interpolate out the nans in the data
-red = tp.interpolate_over_nans(red_corrected)[0]
-green = tp.interpolate_over_nans(green_corrected)[0]
+red = tp.photobleach_correction(red_interp)
+green = tp.photobleach_correction(green_interp)
 
 # infer the model parameters
 trained_variables = tm.tmac_ac(red, green, verbose=True)

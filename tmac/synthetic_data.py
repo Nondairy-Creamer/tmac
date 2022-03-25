@@ -56,7 +56,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         green_true = mean_g * softplus(a + m - 1 + noise_g, beta=beta)
 
     # add photobleaching
-    photo_tau = num_ind / 2
+    photo_tau = num_ind / 3
     red_bleached = red_true * np.exp(-np.arange(num_ind)[:, None] / photo_tau)
     green_bleached = green_true * np.exp(-np.arange(num_ind)[:, None] / photo_tau)
 
