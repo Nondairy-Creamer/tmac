@@ -16,7 +16,7 @@ variance_a_true = 0.3**2
 variance_m_true = 0.3**2
 tau_a_true = 3
 tau_m_true = 3
-frac_nan = 0.20
+frac_nan = 0.05
 beta = 20
 
 # generate synthetic data
