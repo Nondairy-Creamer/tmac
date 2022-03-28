@@ -23,7 +23,7 @@ Also included are two preprocessing functions. A function to linearly interpolat
 
 ```
 import tmac.models as tm
-import calcium_inference.preprocessing as tp
+import tmac.preprocessing as tp
 
 red_interp = tp.interpolate_over_nans(red)[0]
 green_interp = tp.interpolate_over_nans(green)[0]
