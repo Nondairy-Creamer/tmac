@@ -142,15 +142,16 @@ def initialize_length_scale(y):
     """
 
     x = np.arange(-len(y)/2, len(y)/2) + 0.5
-    y_corr = np.correlate(y, y, mode='same')
+    y_z_score = (y - np.mean(y)) / np.std(y)
+    y_corr = np.correlate(y_z_score, y_z_score, mode='same')
 
     # fit the std of a gaussian to the correlation function
     def loss(p):
         return p[0] * norm.pdf(x, 0, p[1]) - y_corr
 
     p_init = np.array((np.max(y_corr), 1.0))
-    s_hat = optimize.leastsq(loss, p_init)[0]
+    p_hat = optimize.leastsq(loss, p_init)[0]
 
     # return the standard deviation
-    return s_hat[1]
+    return p_hat[1]
 
