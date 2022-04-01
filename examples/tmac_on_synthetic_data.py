@@ -10,14 +10,14 @@ num_ind = 5000
 num_neurons = 100
 mean_r = 20
 mean_g = 30
-variance_noise_r_true = 0.2**2
-variance_noise_g_true = 0.2**2
-variance_a_true = 0.3**2
-variance_m_true = 0.3**2
-tau_a_true = 3
-tau_m_true = 3
+variance_noise_r_true = 0.005
+variance_noise_g_true = 0.005
+variance_a_true = 0.03
+variance_m_true = 0.04
+tau_a_true = 4
+tau_m_true = 2
 frac_nan = 0.05
-beta = 20
+beta = 200
 
 # generate synthetic data
 red_bleached, green_bleached, a_true, m_true = generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g,

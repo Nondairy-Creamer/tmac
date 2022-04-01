@@ -92,7 +92,25 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
 
     quad_term = auto_corr_term - f_quad
 
-    obj = -log_det_term - quad_term
+    # define the prior over the hyperparameters which is a gamma distribution
+    # we want this to be a low information prior with set parameters
+    # treat it like its the distribution of sample variances for a low sampled gaussian variable with half the variance
+    # of one of the fluorescent channels
+    n = 5
+    alpha = (n - 1) / 2
+    beta_var_a = (n - 1) / (2 * torch.var(g))
+    beta_var_m = (n - 1) / (2 * torch.var(r))
+    beta_var_r = (n - 1) / (2 * torch.var(r))
+    beta_var_g = (n - 1) / (2 * torch.var(g))
+
+    log_gamma_var_a = (alpha - 1) * torch.log(variance_a) - beta_var_a * variance_a
+    log_gamma_var_m = (alpha - 1) * torch.log(variance_m) - beta_var_m * variance_m
+    log_gamma_var_r = (alpha - 1) * torch.log(variance_r_noise) - beta_var_r * variance_r_noise
+    log_gamma_var_g = (alpha - 1) * torch.log(variance_g_noise) - beta_var_g * variance_g_noise
+
+    hyperprior_term = log_gamma_var_a + log_gamma_var_m + log_gamma_var_r + log_gamma_var_g
+
+    obj = -log_det_term - quad_term + hyperprior_term
 
     if calculate_posterior:
         a_fft = f11_inv * f_quad_mult_1 + f12_inv * f_quad_mult_2
