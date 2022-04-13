@@ -5,6 +5,7 @@ from scipy import optimize
 from scipy.stats import norm
 import tmac.probability_distributions as tpd
 import tmac.fourier as tfo
+from torchmin import minimize
 
 
 def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
@@ -77,21 +78,17 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
                                                     training_variables[2], training_variables[3],
                                                     training_variables[4], training_variables[5])
 
-        # a wrapper function of evidence that takes in and returns numpy variables
-        def evidence_loss_fn_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device)
-            return evidence_loss_fn(training_variables).numpy()
 
         # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
-        def evidence_loss_jacobian_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device, requires_grad=True)
-            loss = evidence_loss_fn(training_variables)
-            return torch.autograd.grad(loss, training_variables, create_graph=False)[0].numpy()
+        torch_variables = torch.tensor(evidence_training_variables, dtype=dtype, device=device)
+        trained_variances = minimize(evidence_loss_fn, torch_variables, method=optimizer, disp=True)
 
-        # optimization function with Jacobian from pytorch
-        trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
-                                              jac=evidence_loss_jacobian_np,
-                                              method=optimizer)
+        trained_variance_torch = trained_variances.x
+        a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n],
+                                               green_fft[:, n], trained_variance_torch[1],
+                                               trained_variance_torch[2], trained_variance_torch[3],
+                                               trained_variance_torch[4], trained_variance_torch[5],
+                                               calculate_posterior=True)
 
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step

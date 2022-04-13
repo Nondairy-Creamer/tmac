@@ -1,10 +1,14 @@
 ## Two-channel motion artifact correction (TMAC)
 
 ### Installation:
-Navigate to the python project directory
+Navigate to a python project directory
 ```
 git clone https://github.com/Nondairy-Creamer/tmac
 cd tmac
+pip install -e .
+
+git clone https://github.com/rfeinman/pytorch-minimize.git
+cd pytorch-minimize
 pip install -e .
 ```
 
