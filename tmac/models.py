@@ -90,13 +90,6 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
                                                trained_variance_torch[4], trained_variance_torch[5],
                                                calculate_posterior=True)
 
-        # calculate the posterior values
-        # The posterior is gaussian so we don't need to optimize, we find a and m in one step
-        trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
-        a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
-                                               trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
-                                               calculate_posterior=True)
-
         a_trained[:, n] = a.numpy()
         m_trained[:, n] = m.numpy()
         variance_r_noise_trained[n] = np.exp(trained_variances.x[0])

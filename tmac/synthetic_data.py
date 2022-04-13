@@ -67,7 +67,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
 
     # mean subtract a and m before returning
 
-    return red_bleached, green_bleached, a - 1, m - 1
+    return red_bleached, green_bleached, a, m - 1
 
 
 def col_corr(a_true, a_hat):
@@ -75,8 +75,8 @@ def col_corr(a_true, a_hat):
     corr = np.zeros(a_true.shape[1])
 
     for c in range(a_true.shape[1]):
-        true_vec = a_true[:, c]
-        hat_vec = a_hat[:, c]
+        true_vec = a_true[:, c] - np.mean(a_true[:, c])
+        hat_vec = a_hat[:, c] - np.mean(a_true[:, c])
         corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
 
     return corr
@@ -94,6 +94,6 @@ def ratio_model(red, green, tau):
     filter_shape = stats.norm.pdf(filter_x / tau) / tau
     green_filtered = signal.convolve2d(green, filter_shape[:, None], 'same')
     red_filtered = signal.convolve2d(red, filter_shape[:, None], 'same')
-    ratio = green_filtered / red_filtered - 1
+    ratio = green_filtered / red_filtered
 
     return ratio
