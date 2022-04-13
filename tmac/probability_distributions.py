@@ -96,7 +96,7 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     # we want this to be a low information prior with set parameters
     # treat it like its the distribution of sample variances for a low sampled gaussian variable with half the variance
     # of one of the fluorescent channels
-    n = 5
+    n = 20
     alpha = (n - 1) / 2
     beta_var_a = (n - 1) / 2 * torch.var(g) * 2 / 3
     beta_var_m = (n - 1) / 2 * torch.var(r) * 2 / 3
