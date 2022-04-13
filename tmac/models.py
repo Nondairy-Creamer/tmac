@@ -81,7 +81,7 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
 
         # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
         torch_variables = torch.tensor(evidence_training_variables, dtype=dtype, device=device)
-        trained_variances = minimize(evidence_loss_fn, torch_variables, method=optimizer, disp=True)
+        trained_variances = minimize(evidence_loss_fn, torch_variables, method=optimizer, disp=verbose)
 
         trained_variance_torch = trained_variances.x
         a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n],
