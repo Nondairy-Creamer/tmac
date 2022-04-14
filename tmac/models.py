@@ -102,12 +102,12 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
 
         a_trained[:, n] = a.numpy()
         m_trained[:, n] = m.numpy()
-        variance_r_noise_trained[n] = np.exp(trained_variances.x[0])
-        variance_g_noise_trained[n] = np.exp(trained_variances.x[1])
-        variance_a_trained[n] = np.exp(trained_variances.x[2])
-        length_scale_a_trained[n] = np.exp(trained_variances.x[3])
-        variance_m_trained[n] = np.exp(trained_variances.x[4])
-        length_scale_m_trained[n] = np.exp(trained_variances.x[5])
+        variance_r_noise_trained[n] = torch.exp(trained_variance_torch[0]).numpy()
+        variance_g_noise_trained[n] = torch.exp(trained_variance_torch[1]).numpy()
+        variance_a_trained[n] = torch.exp(trained_variance_torch[2]).numpy()
+        length_scale_a_trained[n] = torch.exp(trained_variance_torch[3]).numpy()
+        variance_m_trained[n] = torch.exp(trained_variance_torch[4]).numpy()
+        length_scale_m_trained[n] = torch.exp(trained_variance_torch[5]).numpy()
 
         if verbose:
             decimals = 1e3
