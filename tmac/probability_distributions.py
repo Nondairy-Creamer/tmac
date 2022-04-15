@@ -50,7 +50,8 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     # smallest length scale (longest in fourier space)
     min_length = torch.min(length_scale_a.detach(), length_scale_m.detach())
     max_freq = 2*np.log(threshold) / min_length**2
-    frequencies_to_keep = all_freq**2 < max_freq
+    # frequencies_to_keep = all_freq**2 < max_freq
+    frequencies_to_keep = np.zeros(all_freq.shape) == 0
     freq = all_freq[frequencies_to_keep]
     n_freq = len(freq)
     cutoff = torch.tensor(1 / threshold, device=device, dtype=dtype)
