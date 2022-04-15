@@ -92,14 +92,14 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
                                                trained_variance_torch[4], trained_variance_torch[5],
                                                calculate_posterior=True)
 
-        a_trained[:, n] = a.numpy()
-        m_trained[:, n] = m.numpy()
-        variance_r_noise_trained[n] = np.exp(trained_variances.x[0])
-        variance_g_noise_trained[n] = np.exp(trained_variances.x[1])
-        variance_a_trained[n] = np.exp(trained_variances.x[2])
-        length_scale_a_trained[n] = np.exp(trained_variances.x[3])
-        variance_m_trained[n] = np.exp(trained_variances.x[4])
-        length_scale_m_trained[n] = np.exp(trained_variances.x[5])
+        a_trained[:, n] = a.cpu().numpy()
+        m_trained[:, n] = m.cpu().numpy()
+        variance_r_noise_trained[n] = torch.exp(trained_variances.x[0]).cpu().numpy()
+        variance_g_noise_trained[n] = torch.exp(trained_variances.x[1]).cpu().numpy()
+        variance_a_trained[n] = torch.exp(trained_variances.x[2]).cpu().numpy()
+        length_scale_a_trained[n] = torch.exp(trained_variances.x[3]).cpu().numpy()
+        variance_m_trained[n] = torch.exp(trained_variances.x[4]).cpu().numpy()
+        length_scale_m_trained[n] = torch.exp(trained_variances.x[5]).cpu().numpy()
 
         if verbose:
             decimals = 1e3
