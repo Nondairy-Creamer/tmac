@@ -38,65 +38,70 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
 
     variance_r_noise_inv = 1 / variance_r_noise
     variance_g_noise_inv = 1 / variance_g_noise
+    variance_noise_inv_sum = variance_r_noise_inv + variance_g_noise_inv
 
     device = r.device
     dtype = r.dtype
 
     # calculate the gaussian process components in fourier space
+    # kernel = fourier_basis @ S @ fourier_basis.T
+    # since S is diagonal, we just return the diagonal compnents for the activity (a) and motion (m)
     t_max = r.shape[0]
 
     all_freq = tfo.get_fourier_freq(t_max)
     all_freq = torch.tensor(all_freq, device=device, dtype=dtype)
     # smallest length scale (longest in fourier space)
-    min_length = torch.min(length_scale_a.detach(), length_scale_m.detach())
-    max_freq = 2*np.log(threshold) / min_length**2
-    frequencies_to_keep = all_freq**2 < max_freq
+    length_scale_m_detach = length_scale_m.detach()
+    length_scale_a_detach = length_scale_a.detach()
+    min_length = torch.min(torch.cat((length_scale_m_detach[None], length_scale_a_detach[None])))
+    max_freq = 2 * np.log(threshold) / min_length ** 2
+    frequencies_to_keep = all_freq ** 2 < max_freq
     freq = all_freq[frequencies_to_keep]
     n_freq = len(freq)
     cutoff = torch.tensor(1 / threshold, device=device, dtype=dtype)
 
     # compute the diagonals of the covariances in fourier space
-    covariance_a_fft = torch.maximum(torch.exp(-0.5 * freq**2 * length_scale_a**2), cutoff)
+    covariance_a_fft = torch.maximum(torch.exp(-0.5 * freq ** 2 * length_scale_a ** 2), cutoff)
     covariance_a_fft = variance_a * (length_scale_a * np.sqrt(2 * np.pi)) * covariance_a_fft
-    covariance_m_fft = torch.maximum(torch.exp(-0.5 * freq**2 * length_scale_m**2), cutoff)
+    covariance_m_fft = torch.maximum(torch.exp(-0.5 * freq ** 2 * length_scale_m ** 2), cutoff)
     covariance_m_fft = variance_m * (length_scale_m * np.sqrt(2 * np.pi)) * covariance_m_fft
 
-    f11 = 1 / covariance_a_fft + variance_g_noise_inv
-    f22 = 1 / covariance_m_fft + variance_r_noise_inv + variance_g_noise_inv
-    f12 = torch.tile(variance_g_noise_inv, f11.shape)
+    D11 = 1 / covariance_m_fft + variance_noise_inv_sum
+    D22 = 1 / covariance_a_fft + variance_g_noise_inv
+    D12 = torch.ones(n_freq, device=device, dtype=dtype) * variance_g_noise_inv
 
-    f_det = f11 * f22 - f12**2
+    d_det = D11 * D22 - D12 ** 2
 
-    k = f11 - f12**2 / f22
+    D11_inv = (1 + D12 ** 2 / d_det) / D11
+    D22_inv = D11 / d_det
+    D12_inv = -D12 / d_det
 
-    f11_inv = 1 / k
-    f22_inv = 1 / f22 + f12**2 / f22**2 / k
-    f12_inv = -f12 / f22 / k
-
-    log_det_term = torch.log(f_det).sum() + torch.log(covariance_a_fft * covariance_m_fft).sum() +\
-                   t_max*torch.log(variance_g_noise*variance_r_noise)
+    log_det_term = torch.log(d_det).sum() + torch.log(covariance_a_fft * covariance_m_fft).sum() + \
+                   t_max * torch.log(variance_g_noise * variance_r_noise)
+    #
+    # alpha = covariance_m_fft + variance_r_noise
+    # beta = covariance_m_fft
+    # delta = covariance_m_fft + covariance_a_fft + variance_g_noise
+    #
+    # # log_det_term = torch.log(alpha * delta - beta ** 2).sum()
+    # # log_det_term_2 = torch.log(delta).sum() + torch.log(alpha - beta**2 / delta).sum()
 
     # compute the quadratic term
     fourier_r_trimmed = fourier_r[frequencies_to_keep]
     fourier_g_trimmed = fourier_g[frequencies_to_keep]
 
-    auto_corr_term = (variance_r_noise_inv * r**2 + variance_g_noise_inv * g**2).sum()
+    bxy1 = fourier_g_trimmed * variance_g_noise_inv + fourier_r_trimmed * variance_r_noise_inv
+    bxy2 = fourier_g_trimmed * variance_g_noise_inv
 
-    normalized_r_fft = variance_r_noise_inv * fourier_r_trimmed
-    normalized_g_fft = variance_g_noise_inv * fourier_g_trimmed
+    xy_bd_inv_bxy = (D11_inv * bxy1 ** 2).sum() + (D22_inv * bxy2 ** 2).sum() + 2 * (D12_inv * bxy1 * bxy2).sum()
 
-    f_quad_mult_1 = normalized_g_fft
-    f_quad_mult_2 = normalized_r_fft + normalized_g_fft
-
-    f_quad = (f11_inv * f_quad_mult_1**2).sum() + (f22_inv * f_quad_mult_2**2).sum() + 2 * (f12_inv * f_quad_mult_1 * f_quad_mult_2).sum()
-
-    quad_term = auto_corr_term - f_quad
+    quad_term = (r ** 2).sum() * variance_r_noise_inv + (g ** 2).sum() * variance_g_noise_inv - xy_bd_inv_bxy
 
     obj = -log_det_term - quad_term
 
     if calculate_posterior:
-        a_fft = f11_inv * f_quad_mult_1 + f12_inv * f_quad_mult_2
-        m_fft = f22_inv * f_quad_mult_2 + f12_inv * f_quad_mult_1
+        m_fft = D11_inv * bxy1 + D12_inv * bxy2
+        a_fft = D22_inv * bxy2 + D12_inv * bxy1
 
         m_padded = torch.zeros_like(r, device=device, dtype=dtype)
         a_padded = torch.zeros_like(r, device=device, dtype=dtype)
@@ -107,8 +112,7 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
         m_hat = tfo.real_ifft(m_padded)
         a_hat = tfo.real_ifft(a_padded)
 
-        return a_hat+1, m_hat
+        return a_hat, m_hat
 
     else:
         return torch.mean(obj)
-
