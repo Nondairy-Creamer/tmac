@@ -8,7 +8,7 @@ import tmac.fourier as tfo
 from torchmin import minimize
 
 
-def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
+def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=False):
     """ Implementation of the Two-channel motion artifact correction method (TMAC)
 
     This is tmac_ac because it is the additive and circular boundary version
@@ -20,6 +20,8 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
         green_np: numpy array, [time, neurons], activity dependent channel
         optimizer: string, scipy optimizer
         verbose: boolean, if true, outputs when inference is complete on each neuron and estimates time to finish
+        truncate_freq: boolean, if true truncates low amplitude frequencies in Fourier domain. This should give the same
+            results but may give sensitivity to the initial conditions
 
     Returns: a dictionary containing: all the inferred parameters of the model
     """
@@ -78,28 +80,34 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False):
             return -tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
                                                      green[:, n], green_fft[:, n], training_variables[1],
                                                     training_variables[2], training_variables[3],
-                                                    training_variables[4], training_variables[5])
+                                                    training_variables[4], training_variables[5],
+                                                    truncate_freq=truncate_freq)
 
 
         # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
         torch_variables = torch.tensor(evidence_training_variables, dtype=dtype, device=device)
         trained_variances = minimize(evidence_loss_fn, torch_variables, method=optimizer, disp=verbose)
 
-        trained_variance_torch = trained_variances.x
-        a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n],
-                                               green_fft[:, n], trained_variance_torch[1],
-                                               trained_variance_torch[2], trained_variance_torch[3],
-                                               trained_variance_torch[4], trained_variance_torch[5],
-                                               calculate_posterior=True)
+        # optimization function with Jacobian from pytorch
+        trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
+                                              jac=evidence_loss_jacobian_np,
+                                              method=optimizer)
 
-        a_trained[:, n] = a.cpu().numpy()
-        m_trained[:, n] = m.cpu().numpy()
-        variance_r_noise_trained[n] = torch.exp(trained_variances.x[0]).cpu().numpy()
-        variance_g_noise_trained[n] = torch.exp(trained_variances.x[1]).cpu().numpy()
-        variance_a_trained[n] = torch.exp(trained_variances.x[2]).cpu().numpy()
-        length_scale_a_trained[n] = torch.exp(trained_variances.x[3]).cpu().numpy()
-        variance_m_trained[n] = torch.exp(trained_variances.x[4]).cpu().numpy()
-        length_scale_m_trained[n] = torch.exp(trained_variances.x[5]).cpu().numpy()
+        # calculate the posterior values
+        # The posterior is gaussian so we don't need to optimize, we find a and m in one step
+        trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
+        a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
+                                               trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
+                                               calculate_posterior=True, truncate_freq=truncate_freq)
+
+        a_trained[:, n] = a.numpy()
+        m_trained[:, n] = m.numpy()
+        variance_r_noise_trained[n] = torch.exp(trained_variance_torch[0]).numpy()
+        variance_g_noise_trained[n] = torch.exp(trained_variance_torch[1]).numpy()
+        variance_a_trained[n] = torch.exp(trained_variance_torch[2]).numpy()
+        length_scale_a_trained[n] = torch.exp(trained_variance_torch[3]).numpy()
+        variance_m_trained[n] = torch.exp(trained_variance_torch[4]).numpy()
+        length_scale_m_trained[n] = torch.exp(trained_variance_torch[5]).numpy()
 
         if verbose:
             decimals = 1e3

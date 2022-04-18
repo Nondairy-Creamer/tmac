@@ -5,7 +5,7 @@ import tmac.fourier as tfo
 
 def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
                                 log_variance_a, log_tau_a, log_variance_m, log_tau_m,
-                                threshold=1e8, calculate_posterior=False):
+                                threshold=1e8, calculate_posterior=False, truncate_freq=False):
     """ Two-channel motion artifact correction (TMAC) evidence and posterior distribution
 
     Args:
@@ -21,7 +21,8 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
         log_tau_m: log of the timescale of the motion artifact
         threshold: maximum condition number of the radial basis function kernel for the Gaussian process
         calculate_posterior: boolean, whether to calculate the posterior
-
+        truncate_freq: boolean, if true truncates low amplitude frequencies in Fourier domain. This should give the same
+            results but may give sensitivity to the initial conditions
     if calculate_posterior:
         Returns: a_hat, m_hat
     else:
@@ -51,11 +52,14 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     all_freq = tfo.get_fourier_freq(t_max)
     all_freq = torch.tensor(all_freq, device=device, dtype=dtype)
     # smallest length scale (longest in fourier space)
-    length_scale_m_detach = length_scale_m.detach()
-    length_scale_a_detach = length_scale_a.detach()
-    min_length = torch.min(torch.cat((length_scale_m_detach[None], length_scale_a_detach[None])))
-    max_freq = 2 * np.log(threshold) / min_length ** 2
-    frequencies_to_keep = all_freq ** 2 < max_freq
+    min_length = torch.min(length_scale_a.detach(), length_scale_m.detach())
+
+    if truncate_freq:
+        max_freq = 2*np.log(threshold) / min_length**2
+        frequencies_to_keep = all_freq**2 < max_freq
+    else:
+        frequencies_to_keep = np.full(all_freq.shape, True)
+
     freq = all_freq[frequencies_to_keep]
     n_freq = len(freq)
     cutoff = torch.tensor(1 / threshold, device=device, dtype=dtype)
