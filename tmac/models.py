@@ -29,6 +29,14 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Fal
     device = 'cpu'
     dtype = torch.float64
 
+    red_nan = np.any(np.isnan(red_np))
+    red_inf = np.any(np.isinf(red_np))
+    green_nan = np.any(np.isnan(green_np))
+    green_inf = np.any(np.isinf(green_np))
+
+    if red_nan or red_inf or green_nan or green_inf:
+        raise Exception('Input data cannot have any nan or inf')
+
     # convert data to units of fold mean and subtract mean
     red_np = red_np / np.mean(red_np, axis=0) - 1
     green_np = green_np / np.mean(green_np, axis=0) - 1
