@@ -113,7 +113,7 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
         m_hat = tfo.real_ifft(m_padded)
         a_hat = tfo.real_ifft(a_padded)
 
-        return a_hat, m_hat
+        return a_hat+1, m_hat
 
     else:
         return torch.mean(obj)
