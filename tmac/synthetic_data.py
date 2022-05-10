@@ -75,8 +75,8 @@ def col_corr(a_true, a_hat):
     corr = np.zeros(a_true.shape[1])
 
     for c in range(a_true.shape[1]):
-        true_vec = a_true[:, c]
-        hat_vec = a_hat[:, c]
+        true_vec = a_true[:, c] - np.mean(a_true[:, c])
+        hat_vec = a_hat[:, c] - np.mean(a_hat[:, c])
         corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
 
     return corr
