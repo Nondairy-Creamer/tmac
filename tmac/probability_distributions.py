@@ -79,8 +79,8 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
     f22_inv = 1 / f22 + f12**2 / f22**2 / k
     f12_inv = -f12 / f22 / k
 
-    log_det_term = torch.log(f_det).sum() + torch.log(covariance_a_fft * covariance_m_fft).sum() +\
-                   t_max*torch.log(variance_g_noise*variance_r_noise)
+    log_det_term = -(torch.log(f_det).sum() + torch.log(covariance_a_fft * covariance_m_fft).sum() +
+                     t_max*torch.log(variance_g_noise*variance_r_noise))
 
     # compute the quadratic term
     fourier_r_trimmed = fourier_r[frequencies_to_keep]
@@ -96,9 +96,9 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
 
     f_quad = (f11_inv * f_quad_mult_1**2).sum() + (f22_inv * f_quad_mult_2**2).sum() + 2 * (f12_inv * f_quad_mult_1 * f_quad_mult_2).sum()
 
-    quad_term = auto_corr_term - f_quad
+    quad_term = -(auto_corr_term - f_quad)
 
-    obj = -log_det_term - quad_term
+    obj = log_det_term + quad_term
 
     if calculate_posterior:
         a_fft = f11_inv * f_quad_mult_1 + f12_inv * f_quad_mult_2
