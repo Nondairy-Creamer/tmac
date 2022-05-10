@@ -42,18 +42,20 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     a = fourier_basis @ (np.sqrt(c_diag_a[:, None]) * np.random.randn(num_ind, num_neurons))
     m = fourier_basis @ (np.sqrt(c_diag_m[:, None]) * np.random.randn(num_ind, num_neurons))
 
+    # keep a and m from being negative for the multiplicative model
+    # a has mean 1, m has mean 0
     a = softplus(a + 1, beta=beta)
-    m = softplus(m + 1, beta=beta)
+    m = softplus(m + 1, beta=beta) - 1
 
     noise_r = np.sqrt(variance_noise_r) * np.random.randn(num_ind, num_neurons)
     noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
 
-    red_true = mean_r * softplus(m + noise_r, beta=beta)
+    red_true = mean_r * softplus(m + 1 + noise_r, beta=beta)
 
     if multiplicative:
-        green_true = mean_g * softplus(a * m + noise_g, beta=beta)
+        green_true = mean_g * softplus(a * (m + 1) + noise_g, beta=beta)
     else:
-        green_true = mean_g * softplus(a + m - 1 + noise_g, beta=beta)
+        green_true = mean_g * softplus(a + m + noise_g, beta=beta)
 
     # add photobleaching
     photo_tau = num_ind / 3
@@ -65,9 +67,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     red_bleached[ind_to_nan, :] = np.array('nan')
     green_bleached[ind_to_nan, :] = np.array('nan')
 
-    # mean subtract a and m before returning
-
-    return red_bleached, green_bleached, a - 1, m - 1
+    return red_bleached, green_bleached, a, m
 
 
 def col_corr(a_true, a_hat):
@@ -75,8 +75,8 @@ def col_corr(a_true, a_hat):
     corr = np.zeros(a_true.shape[1])
 
     for c in range(a_true.shape[1]):
-        true_vec = a_true[:, c]
-        hat_vec = a_hat[:, c]
+        true_vec = a_true[:, c] - np.mean(a_true[:, c])
+        hat_vec = a_hat[:, c] - np.mean(a_hat[:, c])
         corr[c] = np.mean(true_vec * hat_vec) / np.std(true_vec) / np.std(hat_vec)
 
     return corr

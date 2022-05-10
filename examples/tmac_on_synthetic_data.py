@@ -57,26 +57,26 @@ plot_start = 150
 plot_time = 100
 
 plt.figure()
-green_fold_change = green / np.mean(green, axis=0) - 1
-red_fold_change = red / np.mean(red, axis=0) - 1
+green_fold_change = green / np.mean(green, axis=0)
+red_fold_change = red / np.mean(red, axis=0)
 # plot the green fluorescence
 axes = plt.subplot(3, 1, 1)
 plt.plot(green_fold_change[plot_start:plot_start+plot_time, plot_ind])
 plt.plot(red_fold_change[plot_start:plot_start+plot_time, plot_ind])
-plt.plot([0, plot_time], [0, 0])
-lims = axes.get_ylim()
-lim_to_use = np.max(np.abs(lims))
-axes.set_ylim([-lim_to_use, lim_to_use])
+plt.plot([0, plot_time], [1, 1])
+lims = np.array(axes.get_ylim())
+lim_to_use = np.max(np.abs(lims - 1))
+axes.set_ylim([-lim_to_use + 1, lim_to_use + 1])
 plt.legend(['green'])
 
 # plot the true activity against the inferred activity
 axes = plt.subplot(3, 1, 2)
 plt.plot(a_true[plot_start:plot_start+plot_time, plot_ind])
 plt.plot(a_trained[plot_start:plot_start+plot_time, plot_ind])
-plt.plot([0, plot_time], [0, 0])
-lims = axes.get_ylim()
-lim_to_use = np.max(np.abs(lims))
-axes.set_ylim([-lim_to_use, lim_to_use])
+plt.plot([0, plot_time], [1, 1])
+lims = np.array(axes.get_ylim())
+lim_to_use = np.max(np.abs(lims - 1))
+axes.set_ylim([-lim_to_use + 1, lim_to_use + 1])
 plt.legend(['a_true', 'a_trained'])
 
 # plot the motion artifact
@@ -94,7 +94,7 @@ plt.show()
 
 # ratio vs TMAC performance
 ratio_corelation_squared = col_corr(a_true, ratio)**2
-tmac_corelation_squared = col_corr(a_true, a_trained) ** 2
+tmac_corelation_squared = col_corr(a_true, a_trained)**2
 
 plt.figure()
 axes = plt.subplot(1, 2, 1)
