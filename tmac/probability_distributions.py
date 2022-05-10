@@ -98,7 +98,58 @@ def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g
 
     quad_term = -(auto_corr_term - f_quad)
 
-    obj = log_det_term + quad_term
+    # define the hyperprior: the prior over the hyperparameters which is an inverse gamma distribution
+    # we aren't learning the mean or variance of this distribution so just set it to something reasonable.
+    # The goal here is to just keep the variance from going to 0 or inf
+    variance_g = torch.var(g)
+    variance_r = torch.var(r)
+
+    # hyperprior mean for the hyperparameters
+    # Arbitrarily i'll say that 2/3 of the variance come from signal and 1/3 from noise. This should be insensitive
+    hp_mean_for_var_a = variance_g * 2 / 3
+    hp_mean_for_var_m = variance_r * 2 / 3
+    hp_mean_for_var_r = variance_r * 1 / 3
+    hp_mean_for_var_g = variance_g * 1 / 3
+    hp_mean_for_tau_a = variance_g * 2 / 3
+    hp_mean_for_tau_m = variance_r * 2 / 3
+
+    # hyperprior variance for the hyperparameters
+    # We'll set the std to be half of the mean
+    hp_var_for_var_a = (hp_mean_for_var_a / 2) ** 2
+    hp_var_for_var_m = (hp_mean_for_var_m / 2) ** 2
+    hp_var_for_var_r = (hp_mean_for_var_r / 2) ** 2
+    hp_var_for_var_g = (hp_mean_for_var_g / 2) ** 2
+    hp_var_for_tau_a = (hp_mean_for_tau_a / 2) ** 2
+    hp_var_for_tau_m = (hp_mean_for_tau_m / 2) ** 2
+
+    # these are the equations for the parametsrs alpha and beta so that the mean and variance
+    # of the distribution are set to hp_mean and hp_var
+    alpha_var_a = hp_mean_for_var_a ** 2 / hp_var_for_var_a + 1
+    alpha_var_m = hp_mean_for_var_m ** 2 / hp_var_for_var_m + 1
+    alpha_var_r = hp_mean_for_var_r ** 2 / hp_var_for_var_r + 1
+    alpha_var_g = hp_mean_for_var_g ** 2 / hp_var_for_var_g + 1
+    alpha_tau_a = hp_mean_for_tau_a ** 2 / hp_var_for_tau_a + 1
+    alpha_tau_m = hp_mean_for_tau_m ** 2 / hp_var_for_tau_m + 1
+
+    beta_var_a = hp_mean_for_var_a * alpha_var_a
+    beta_var_m = hp_mean_for_var_m * alpha_var_m
+    beta_var_r = hp_mean_for_var_r * alpha_var_r
+    beta_var_g = hp_mean_for_var_g * alpha_var_g
+    beta_tau_a = hp_mean_for_tau_a * alpha_tau_a
+    beta_tau_m = hp_mean_for_tau_m * alpha_tau_m
+
+    # calculate the probability of each parameter using the equation for the lag
+    log_gamma_inv_var_a = (-alpha_var_a - 1) * torch.log(variance_a) - beta_var_a / variance_a
+    log_gamma_inv_var_m = (-alpha_var_m - 1) * torch.log(variance_m) - beta_var_m / variance_m
+    log_gamma_inv_var_r = (-alpha_var_r - 1) * torch.log(variance_r_noise) - beta_var_r / variance_r_noise
+    log_gamma_inv_var_g = (-alpha_var_g - 1) * torch.log(variance_g_noise) - beta_var_g / variance_g_noise
+    log_gamma_inv_tau_a = (-alpha_tau_a - 1) * torch.log(length_scale_a) - beta_tau_a / length_scale_a
+    log_gamma_inv_tau_m = (-alpha_tau_m - 1) * torch.log(length_scale_m) - beta_tau_m / length_scale_m
+
+    hyperprior_term = log_gamma_inv_var_a + log_gamma_inv_var_m + log_gamma_inv_var_r + log_gamma_inv_var_g + \
+                      log_gamma_inv_tau_a + log_gamma_inv_tau_m
+
+    obj = log_det_term + quad_term + hyperprior_term
 
     if calculate_posterior:
         a_fft = f11_inv * f_quad_mult_1 + f12_inv * f_quad_mult_2
