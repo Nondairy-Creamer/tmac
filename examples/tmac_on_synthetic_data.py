@@ -67,7 +67,7 @@ plt.plot([0, plot_time], [1, 1])
 lims = np.array(axes.get_ylim())
 lim_to_use = np.max(np.abs(lims - 1))
 axes.set_ylim([-lim_to_use + 1, lim_to_use + 1])
-plt.legend(['green'])
+plt.legend(['green', 'red'])
 
 # plot the true activity against the inferred activity
 axes = plt.subplot(3, 1, 2)
