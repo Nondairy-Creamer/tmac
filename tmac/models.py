@@ -5,6 +5,7 @@ from scipy import optimize
 from scipy.stats import norm
 import tmac.probability_distributions as tpd
 import tmac.fourier as tfo
+from torchmin import minimize
 
 
 def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=False):
@@ -26,7 +27,7 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Fal
     """
 
     # optimization is performed using Scipy optimize, so all tensors should stay on the CPU
-    device = 'cpu'
+    device = 'cuda'
     dtype = torch.float64
 
     red_nan = np.any(np.isnan(red_np))
@@ -77,8 +78,11 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Fal
     for n in range(red_np.shape[1]):
         # get the initial values for the hyperparameters of this neuron
         # All hyperparameters are positive so we fit them in log space
-        evidence_training_variables = np.log([variance_r_noise_init[n], variance_g_noise_init[n], variance_a_init[n],
-                                              length_scale_a_init[n], variance_m_init[n], length_scale_m_init[n]])
+        # evidence_training_variables = np.log([variance_r_noise_init[n], variance_g_noise_init[n], variance_a_init[n],
+        #                                      length_scale_a_init[n], variance_m_init[n], length_scale_m_init[n]])
+        evidence_training_variables = torch.tensor(np.log([variance_r_noise_init[n], variance_g_noise_init[n], variance_a_init[n],
+                                                   length_scale_a_init[n], variance_m_init[n], length_scale_m_init[n]]),
+                                                   device=device, dtype=dtype)
 
         # define the evidence loss function. This function takes in and returns pytorch tensors
         def evidence_loss_fn(training_variables):
@@ -89,36 +93,39 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Fal
                                                     truncate_freq=truncate_freq)
 
         # a wrapper function of evidence that takes in and returns numpy variables
-        def evidence_loss_fn_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device)
-            return evidence_loss_fn(training_variables).numpy()
+        # def evidence_loss_fn_np(training_variables_in):
+        #     training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device)
+        #     return evidence_loss_fn(training_variables).numpy()
 
         # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
-        def evidence_loss_jacobian_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device, requires_grad=True)
-            loss = evidence_loss_fn(training_variables)
-            return torch.autograd.grad(loss, training_variables, create_graph=False)[0].numpy()
+        # def evidence_loss_jacobian_np(training_variables_in):
+        #     training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device, requires_grad=True)
+        #     loss = evidence_loss_fn(training_variables)
+        #     return torch.autograd.grad(loss, training_variables, create_graph=False)[0].numpy()
 
         # optimization function with Jacobian from pytorch
-        trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
-                                              jac=evidence_loss_jacobian_np,
-                                              method=optimizer)
+        # trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
+        #                                       jac=evidence_loss_jacobian_np,
+        #                                       method=optimizer)
+        trained_variances = minimize(evidence_loss_fn, evidence_training_variables,
+                                     method=optimizer)
 
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step
-        trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
+        # trained_variance_torch = torch.tensor(trained_variances.x, dtype=dtype, device=device)
+        trained_variance_torch = trained_variances.x
         a, m = tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], trained_variance_torch[0], green[:, n], green_fft[:, n], trained_variance_torch[1],
                                                trained_variance_torch[2], trained_variance_torch[3], trained_variance_torch[4], trained_variance_torch[5],
                                                calculate_posterior=True, truncate_freq=truncate_freq)
 
-        a_trained[:, n] = a.numpy()
-        m_trained[:, n] = m.numpy()
-        variance_r_noise_trained[n] = torch.exp(trained_variance_torch[0]).numpy()
-        variance_g_noise_trained[n] = torch.exp(trained_variance_torch[1]).numpy()
-        variance_a_trained[n] = torch.exp(trained_variance_torch[2]).numpy()
-        length_scale_a_trained[n] = torch.exp(trained_variance_torch[3]).numpy()
-        variance_m_trained[n] = torch.exp(trained_variance_torch[4]).numpy()
-        length_scale_m_trained[n] = torch.exp(trained_variance_torch[5]).numpy()
+        a_trained[:, n] = a.cpu().numpy()
+        m_trained[:, n] = m.cpu().numpy()
+        variance_r_noise_trained[n] = torch.exp(trained_variance_torch[0]).cpu().numpy()
+        variance_g_noise_trained[n] = torch.exp(trained_variance_torch[1]).cpu().numpy()
+        variance_a_trained[n] = torch.exp(trained_variance_torch[2]).cpu().numpy()
+        length_scale_a_trained[n] = torch.exp(trained_variance_torch[3]).cpu().numpy()
+        variance_m_trained[n] = torch.exp(trained_variance_torch[4]).cpu().numpy()
+        length_scale_m_trained[n] = torch.exp(trained_variance_torch[5]).cpu().numpy()
 
         if verbose:
             decimals = 1e3
