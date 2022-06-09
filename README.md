@@ -3,7 +3,7 @@
 ### Installation:
 Navigate to the python project directory
 ```
-pip3 install --force-reinstall --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+pip3 install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
 git clone https://github.com/Nondairy-Creamer/tmac
 cd tmac
