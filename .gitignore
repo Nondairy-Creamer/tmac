@@ -202,3 +202,5 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 tmac/pytorch-minimize/
+
+pytorch-minimize/

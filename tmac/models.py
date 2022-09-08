@@ -7,7 +7,7 @@ import tmac.probability_distributions as tpd
 import tmac.fourier as tfo
 
 
-def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=False):
+def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=True):
     """ Implementation of the Two-channel motion artifact correction method (TMAC)
 
     This is tmac_ac because it is the additive and circular boundary version
@@ -38,8 +38,10 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Fal
         raise Exception('Input data cannot have any nan or inf')
 
     # convert data to units of fold mean and subtract mean
-    red_np = red_np / np.mean(red_np, axis=0) - 1
-    green_np = green_np / np.mean(green_np, axis=0) - 1
+    mean_red = np.mean(red_np, axis=0)
+    mean_green = np.mean(green_np, axis=0)
+    red_np = red_np / mean_red - 1
+    green_np = green_np / mean_green - 1
 
     # convert to tensors and fourier transform
     red = torch.tensor(red_np, device=device, dtype=dtype)
