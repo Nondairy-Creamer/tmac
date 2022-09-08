@@ -44,11 +44,11 @@ trained_variables = tm.tmac_ac(red_corrected, green_corrected)
 
 ### Output:
 The output dictionary contains
-* **a [time, neurons]**: The neural activity 
-* **m [time, neurons]**: The motion artifact
-* **length\_scale\_a**, **length\_scale\_m  [neurons,]**: the timescale of the gaussian process for a and m in units of time indices
-* **variance\_a**, **variance\_m [neurons,]**: the amplitude of a and m
-* **variance\_g\_noise**, **variance\_r\_noise [neurons,]**: the amplitude of the channel noise for r and g
+* **a**: [time, neurons], the neural activity 
+* **m**: [time, neurons], the motion artifact
+* **length\_scale\_a**, **length\_scale\_m**: [neurons,], the timescale of the gaussian process for a and m in units of time indices
+* **variance\_a**, **variance\_m**: [neurons,], the amplitude of a and m
+* **variance\_g\_noise**, **variance\_r\_noise**: [neurons,], the amplitude of the channel noise for r and g
 
 ### Notes
 * Every neuron is processed separately. The input is a matrix for convenience.
