@@ -18,7 +18,7 @@ Optical imaging of neural activity using fluorescent indicators is a powerful te
 Below we refer to the activity-depdendent channel as the "green channel" and the activity-independent channel as the "red channel" because it relates to the common use case where researchers measure green calcium dependent GCaMP fluorescence and activity-independent fluoresence of a red fluorophore.
 
 Importantly, TMAC will remove motion artifacts in any type of two-channel imaging, so long as one channel is activity-independent and both channels share
-the same motion artifact component. TMAC could therefore be applied to a wide range of two-channel imaging modalities including for voltage imaging [37], fiber photometry when using an isosbestic wavelength [38,39], or two-channel two-photon imaging [40].
+the same motion artifact component. TMAC could therefore be applied to a wide range of two-channel imaging modalities including for voltage imaging, fiber photometry when using an isosbestic wavelength, or two-channel two-photon imaging.
 
 ### Usage:
 To see an example on synthetic data, install the package into a python project, then run the script examples/tmac_on_synthetic_data.py
