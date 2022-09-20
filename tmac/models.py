@@ -85,7 +85,7 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
         # define the evidence loss function. This function takes in and returns pytorch tensors
         def evidence_loss_fn(training_variables):
             return -tpd.tmac_evidence_and_posterior(red[:, n], red_fft[:, n], training_variables[0],
-                                                     green[:, n], green_fft[:, n], training_variables[1],
+                                                    green[:, n], green_fft[:, n], training_variables[1],
                                                     training_variables[2], training_variables[3],
                                                     training_variables[4], training_variables[5],
                                                     truncate_freq=truncate_freq)
