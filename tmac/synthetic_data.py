@@ -8,7 +8,8 @@ def softplus(x, beta=50):
 
 
 def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise_r, variance_noise_g,
-                            variance_a, variance_m, tau_a, tau_m, frac_nan=0.0, beta=20, multiplicative=False):
+                            variance_a, variance_m, tau_a, tau_m,
+                            frac_nan=0.0, beta=20, multiplicative=False, rng_seed=None):
     """ Function that generates synthetic two channel imaging data
 
     Args:
@@ -32,6 +33,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
         a: activity Gaussian process
         m: motion artifact Gaussian process
     """
+    rng = np.random.default_rng(rng_seed)
 
     fourier_basis, frequency_vec = tfo.get_fourier_basis(num_ind)
 
@@ -39,16 +41,16 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     c_diag_a = variance_a * tau_a * np.sqrt(2 * np.pi) * np.exp(-0.5 * frequency_vec**2 * tau_a**2)
     c_diag_m = variance_m * tau_m * np.sqrt(2 * np.pi) * np.exp(-0.5 * frequency_vec**2 * tau_m**2)
 
-    a = fourier_basis @ (np.sqrt(c_diag_a[:, None]) * np.random.randn(num_ind, num_neurons))
-    m = fourier_basis @ (np.sqrt(c_diag_m[:, None]) * np.random.randn(num_ind, num_neurons))
+    a = fourier_basis @ (np.sqrt(c_diag_a[:, None]) * rng.standard_normal((num_ind, num_neurons)))
+    m = fourier_basis @ (np.sqrt(c_diag_m[:, None]) * rng.standard_normal((num_ind, num_neurons)))
 
     # keep a and m from being negative for the multiplicative model
     # a has mean 1, m has mean 0
     a = softplus(a + 1, beta=beta)
     m = softplus(m + 1, beta=beta) - 1
 
-    noise_r = np.sqrt(variance_noise_r) * np.random.randn(num_ind, num_neurons)
-    noise_g = np.sqrt(variance_noise_g) * np.random.randn(num_ind, num_neurons)
+    noise_r = np.sqrt(variance_noise_r) * rng.standard_normal((num_ind, num_neurons))
+    noise_g = np.sqrt(variance_noise_g) * rng.standard_normal((num_ind, num_neurons))
 
     red_true = mean_r * softplus(m + 1 + noise_r, beta=beta)
 
@@ -63,7 +65,7 @@ def generate_synthetic_data(num_ind, num_neurons, mean_r, mean_g, variance_noise
     green_bleached = green_true * np.exp(-np.arange(num_ind)[:, None] / photo_tau)
 
     # nan a few values
-    ind_to_nan = np.random.rand(num_ind) <= frac_nan
+    ind_to_nan = rng.random(num_ind) <= frac_nan
     red_bleached[ind_to_nan, :] = np.array('nan')
     green_bleached[ind_to_nan, :] = np.array('nan')
 
