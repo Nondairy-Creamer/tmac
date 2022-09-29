@@ -5,6 +5,7 @@ from scipy import optimize
 from scipy.stats import norm
 import tmac.probability_distributions as tpd
 import tmac.fourier as tfo
+import tmac.optimization as opt
 
 
 def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=True):
@@ -78,7 +79,7 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
     start = time.time()
     for n in range(red_np.shape[1]):
         # get the initial values for the hyperparameters of this neuron
-        # All hyperparameters are positive so we fit them in log space
+        # All hyperparameters are positive, so we fit them in log space
         evidence_training_variables = np.log([variance_r_noise_init[n], variance_g_noise_init[n], variance_a_init[n],
                                               length_scale_a_init[n], variance_m_init[n], length_scale_m_init[n]])
 
@@ -90,21 +91,8 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
                                                     training_variables[4], training_variables[5],
                                                     truncate_freq=truncate_freq)
 
-        # a wrapper function of evidence that takes in and returns numpy variables
-        def evidence_loss_fn_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device)
-            return evidence_loss_fn(training_variables).numpy()
-
-        # wrapper function of for Jacobian of the evidence that takes in and returns numpy variables
-        def evidence_loss_jacobian_np(training_variables_in):
-            training_variables = torch.tensor(training_variables_in, dtype=dtype, device=device, requires_grad=True)
-            loss = evidence_loss_fn(training_variables)
-            return torch.autograd.grad(loss, training_variables, create_graph=False)[0].numpy()
-
-        # optimization function with Jacobian from pytorch
-        trained_variances = optimize.minimize(evidence_loss_fn_np, evidence_training_variables,
-                                              jac=evidence_loss_jacobian_np,
-                                              method=optimizer)
+        trained_variances = opt.scipy_minimize_with_grad(evidence_loss_fn, evidence_training_variables,
+                                                         optimizer=optimizer, device=device, dtype=dtype)
 
         # calculate the posterior values
         # The posterior is gaussian so we don't need to optimize, we find a and m in one step

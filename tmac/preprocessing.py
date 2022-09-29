@@ -1,5 +1,6 @@
 import numpy as np
-from scipy import interpolate, optimize
+from scipy import interpolate
+import tmac.optimization as opt
 import torch
 
 
@@ -44,7 +45,7 @@ def interpolate_over_nans(input_mat, t=None):
     return output_mat, t_interp
 
 
-def photobleach_correction(time_by_neurons, t=None):
+def photobleach_correction(time_by_neurons, t=None, optimizer='BFGS'):
     """ Function to fit an exponential with a shared tau to all the columns of time_by_neurons
 
     This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
@@ -78,19 +79,8 @@ def photobleach_correction(time_by_neurons, t=None):
         exponential = p[None, 1:] * torch.exp(-t_torch[:, None] / p[0])
         return ((exponential - time_by_neurons_torch)**2).sum()
 
-    def loss_fn_np(p_in):
-        p = torch.tensor(p_in, dtype=dtype, device=device)
-        return loss_fn(p).numpy()
-
-    def loss_fn_jacobian_np(p_in):
-        p = torch.tensor(p_in, dtype=dtype, device=device, requires_grad=True)
-        loss = loss_fn(p)
-        return torch.autograd.grad(loss, p, create_graph=False)[0].numpy()
-
-    # optimization function with jacobian from pytorch
-    p_hat = optimize.minimize(loss_fn_np, p_0,
-                              jac=loss_fn_jacobian_np,
-                              method='BFGS')
+    p_hat = opt.scipy_minimize_with_grad(loss_fn, p_0,
+                                         optimizer=optimizer, device=device, dtype=dtype)
 
     time_by_neurons_corrected = time_by_neurons_torch / torch.exp(-t_torch[:, None] / p_hat.x[0])
 
