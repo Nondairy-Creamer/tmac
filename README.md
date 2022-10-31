@@ -38,13 +38,13 @@ Also included are two preprocessing functions. A function to linearly interpolat
 import tmac.models as tm
 import tmac.preprocessing as tp
 
-red_interp = tp.interpolate_over_nans(red)[0]
-green_interp = tp.interpolate_over_nans(green)[0]
+red_corrected = tp.photobleach_correction(red)
+green_corrected = tp.photobleach_correction(green)
 
-red_corrected = tp.photobleach_correction(red_interp)
-green_corrected = tp.photobleach_correction(green_interp)
+red_interp = tp.interpolate_over_nans(red_corrected)[0]
+green_interp = tp.interpolate_over_nans(green_corrected)[0]
 
-trained_variables = tm.tmac_ac(red_corrected, green_corrected)
+trained_variables = tm.tmac_ac(red_interp, green_interp)
 ```
 
 ### Output:

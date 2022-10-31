@@ -52,15 +52,14 @@ def photobleach_correction(time_by_neurons, t=None, optimizer='BFGS'):
     between every column in time_by_neurons. A is an amplitude vector that is fit separately for each column. The
     correction is time_by_neurons / exp(-t / tau), preserving the amplitude of the data.
 
+    This function can handle nans in the input
+
     Args:
         time_by_neurons: numpy array [time, neurons]
         t: optional, only important if time_by_neurons is not sampled evenly in time
 
     Returns: time_by_neurons divided by the exponential
     """
-
-    if np.any(np.isnan(time_by_neurons)):
-        raise Exception('Photobleach correction cannot be performed with NaNs in data')
 
     if t is None:
         t = np.arange(time_by_neurons.shape[0])
@@ -72,16 +71,25 @@ def photobleach_correction(time_by_neurons, t=None, optimizer='BFGS'):
     time_by_neurons_torch = torch.tensor(time_by_neurons, dtype=dtype, device=device)
 
     tau_0 = t[-1, None]/2
-    a_0 = np.mean(time_by_neurons, axis=0)
+    a_0 = np.nanmean(time_by_neurons, axis=0)
     p_0 = np.concatenate((tau_0, a_0), axis=0)
 
+    # mask out any nans
+    mask = ~torch.isnan(time_by_neurons_torch)
+    time_by_neurons_torch[~mask] = 0
+
     def loss_fn(p):
-        exponential = p[None, 1:] * torch.exp(-t_torch[:, None] / p[0])
-        return ((exponential - time_by_neurons_torch)**2).sum()
+        exponential_approx = p[None, 1:] * torch.exp(-t_torch[:, None] / p[0])
+        squared_error = ((exponential_approx - time_by_neurons_torch)**2)
+        # set unmeasured values to 0, so they don't show up in the sum
+        squared_error = squared_error * mask
+        return squared_error.sum()
 
     p_hat = opt.scipy_minimize_with_grad(loss_fn, p_0,
                                          optimizer=optimizer, device=device, dtype=dtype)
 
     time_by_neurons_corrected = time_by_neurons_torch / torch.exp(-t_torch[:, None] / p_hat.x[0])
+    # put the unmeasured value nans back in
+    time_by_neurons_corrected[~mask] = np.nan
 
     return time_by_neurons_corrected.numpy()
