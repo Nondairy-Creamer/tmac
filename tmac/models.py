@@ -61,7 +61,7 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
     length_scale_m_init = np.zeros(red_np.shape[1])
 
     for n in range(green_np.shape[1]):
-        # initialize autocorrelation to 1 time bin
+        # initialize length scale to 1 time bin
         length_scale_m_init[n] = 1
         length_scale_a_init[n] = 1
 
