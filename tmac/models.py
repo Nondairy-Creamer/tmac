@@ -62,8 +62,10 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
 
     for n in range(green_np.shape[1]):
         # approximate as the standard deviation of a gaussian fit to the autocorrelation function
-        length_scale_m_init[n] = initialize_length_scale(red_np[:, n])
-        length_scale_a_init[n] = initialize_length_scale(green_np[:, n])
+        # length_scale_m_init[n] = initialize_length_scale(red_np[:, n])
+        # length_scale_a_init[n] = initialize_length_scale(green_np[:, n])
+        length_scale_m_init[n] = 1
+        length_scale_a_init[n] = 1
 
     # preallocate space for all the training variables
     a_trained = np.zeros(red_np.shape)
