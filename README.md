@@ -59,7 +59,7 @@ The output dictionary contains
 * Every neuron is processed separately. The input is a matrix for convenience.
 
 * TMAC is deterministic. You will get the same answer even if you rerun it.
-* TMAC assumes the data is nonnegative, so do not mean subtract your fluorescence data
+* TMAC assumes the data has a nonnegative mean, so do not mean subtract your fluorescence data. The mean provides a scale that lets us compare the two channels. If you don't have a mean and you believe the two channels are already scaled correctly, then just give the two channels the same mean.
 * The photobleach correction provided shares a bleaching tau across neurons, so is not independent across neurons.
 * Do not temporally filter the data. The Gaussian process prior over a and m will perform the necessary smoothing without reducing temporal resolution.
 * The activity a has mean 1 and units of fold change from the mean. If you want it to be unitful, you can multiply each neuron's activity by the mean over time of the green channel input i.e. 
