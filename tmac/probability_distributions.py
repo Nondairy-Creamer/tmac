@@ -5,7 +5,7 @@ import tmac.fourier as tfo
 
 def tmac_evidence_and_posterior(r, fourier_r, log_variance_r_noise, g, fourier_g, log_variance_g_noise,
                                 log_variance_a, log_tau_a, log_variance_m, log_tau_m,
-                                threshold=1e8, calculate_posterior=False, truncate_freq=False):
+                                threshold=1e8, calculate_posterior=False, truncate_freq=True):
     """ Two-channel motion artifact correction (TMAC) evidence and posterior distribution
 
     Args:
