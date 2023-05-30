@@ -4,6 +4,19 @@ import tmac.optimization as opt
 import torch
 
 
+def check_input_format(data):
+    if type(data) is not np.ndarray:
+        raise Exception('The red and green matricies must be the numpy arrays')
+
+    if data.ndim != 1 and data.ndim != 2:
+        raise Exception('The red and green matricies should be 1 or 2 dimensional')
+
+    if data.ndim == 1:
+        data = red_np[:, None]
+
+    return data
+
+
 def interpolate_over_nans(input_mat, t=None):
     """ Function to interpolate over NaN values along the first dimension of a matrix
 
@@ -13,6 +26,8 @@ def interpolate_over_nans(input_mat, t=None):
 
     Returns: Interpolated input_mat, interpolated time
     """
+
+    input_mat = check_input_format(input_mat)
 
     # if t is not specified, assume it has been sampled at regular intervals
     if t is None:
@@ -60,6 +75,8 @@ def photobleach_correction(time_by_neurons, t=None, optimizer='BFGS'):
 
     Returns: time_by_neurons divided by the exponential
     """
+
+    time_by_neurons = check_input_format(time_by_neurons)
 
     if t is None:
         t = np.arange(time_by_neurons.shape[0])

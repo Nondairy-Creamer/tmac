@@ -6,6 +6,7 @@ from scipy.stats import norm
 import tmac.probability_distributions as tpd
 import tmac.fourier as tfo
 import tmac.optimization as opt
+import tmac.preprocessing as pp
 
 
 def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=True):
@@ -30,15 +31,8 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
     device = 'cpu'
     dtype = torch.float64
 
-    if red_np.shape != green_np.shape:
-        raise Exception('The red and green matricies must be the same size')
-
-    if red_np.ndim != 1 and red_np.ndim != 2:
-        raise Exception('The red and green matricies should be 1 or 2 dimensional')
-
-    if red_np.ndim == 1:
-        red_np = red_np[:, None]
-        green_np = green_np[:, None]
+    red_np = pp.check_input_format(red_np)
+    green_np = pp.check_input_format(green_np)
 
     red_nan = np.any(np.isnan(red_np))
     red_inf = np.any(np.isinf(red_np))
@@ -47,6 +41,9 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
 
     if red_nan or red_inf or green_nan or green_inf:
         raise Exception('Input data cannot have any nan or inf')
+
+    if red_np.shape != green_np.shape:
+        raise Exception('red and green matricies must be the same shape')
 
     # convert data to units of fold mean and subtract mean
     mean_red = np.mean(red_np, axis=0)
