@@ -31,10 +31,10 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
     dtype = torch.float64
 
     if red_np.shape != green_np.shape:
-        raise ValueException('The red and green matricies must be the same size')
+        raise Exception('The red and green matricies must be the same size')
 
     if red_np.ndim != 1 and red_np.ndim != 2:
-        raise ValueException('The red and green matricies should be 1 or 2 dimensional')
+        raise Exception('The red and green matricies should be 1 or 2 dimensional')
 
     if red_np.ndim == 1:
         red_np = red_np[:, None]
