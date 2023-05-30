@@ -63,14 +63,9 @@ def tmac_ac(red_np, green_np, optimizer='BFGS', verbose=False, truncate_freq=Tru
     variance_a_init = np.var(green_np, axis=0)
     variance_m_init = np.var(red_np, axis=0)
 
-    # initialize length scale using the autocorrelation of the data
-    length_scale_a_init = np.zeros(red_np.shape[1])
-    length_scale_m_init = np.zeros(red_np.shape[1])
-
-    for n in range(green_np.shape[1]):
-        # initialize length scale to 1 time bin
-        length_scale_m_init[n] = 1
-        length_scale_a_init[n] = 1
+    # initialize length scale
+    length_scale_a_init = np.ones(red_np.shape[1])
+    length_scale_m_init = np.ones(red_np.shape[1])
 
     # preallocate space for all the training variables
     a_trained = np.zeros(red_np.shape)
