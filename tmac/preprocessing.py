@@ -12,7 +12,7 @@ def check_input_format(data):
         raise Exception('The red and green matricies should be 1 or 2 dimensional')
 
     if data.ndim == 1:
-        data = red_np[:, None]
+        data = data[:, None]
 
     return data
 
