@@ -94,18 +94,20 @@ def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_e
     data_max = np.nanmax(time_by_neurons, axis=0)
     a_0 = np.concatenate([data_max / i for i in np.arange(2, 2 + num_exp)], axis=0)
     num_neurons = time_by_neurons.shape[1]
-    p_0 = np.concatenate((tau_0, a_0), axis=0)
+    # fit in log space to ensure everything stays positive
+    p_0 = np.log(np.concatenate((tau_0, a_0), axis=0))
 
     # mask out any nans
     mask = ~torch.isnan(time_by_neurons_torch)
     time_by_neurons_torch[~mask] = 0
 
     def get_exponential_approx(p):
+        p = torch.exp(p)
         exponential = torch.zeros_like(time_by_neurons_torch)
 
         for ex in range(num_exp):
-            amp_start_ind = ex + ex * num_neurons
-            amp_end_ind = ex + (ex + 1) * num_neurons
+            amp_start_ind = num_exp + ex * num_neurons
+            amp_end_ind = num_exp + (ex + 1) * num_neurons
             exponential += p[None, amp_start_ind:amp_end_ind] * torch.exp(-t_torch[:, None] / p[ex])
 
         return exponential
