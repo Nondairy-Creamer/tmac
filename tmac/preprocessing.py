@@ -60,7 +60,7 @@ def interpolate_over_nans(input_mat, t=None):
     return output_mat, t_interp
 
 
-def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_exp=1):
+def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_exp=1, fit_offset=False):
     """ Function to fit an exponential with a shared tau to all the columns of time_by_neurons
 
     This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
@@ -94,21 +94,35 @@ def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_e
     data_max = np.nanmax(time_by_neurons, axis=0)
     a_0 = np.concatenate([data_max / i for i in np.arange(2, 2 + num_exp)], axis=0)
     num_neurons = time_by_neurons.shape[1]
+    offset_0 = np.zeros(num_neurons)
+
     # fit in log space to ensure everything stays positive
-    p_0 = np.log(np.concatenate((tau_0, a_0), axis=0))
+    if fit_offset:
+        p_0 = np.concatenate((np.log(tau_0), offset_0, np.log(a_0)), axis=0)
+    else:
+        p_0 = np.concatenate((np.log(tau_0), np.log(a_0)), axis=0)
 
     # mask out any nans
     mask = ~torch.isnan(time_by_neurons_torch)
     time_by_neurons_torch[~mask] = 0
 
+    if fit_offset:
+        amp_ind_start = num_exp + num_neurons
+    else:
+        amp_ind_start = num_exp
+
     def get_exponential_approx(p):
-        p = torch.exp(p)
+        tau = torch.split(torch.exp(p[:num_exp]), 1)
+        offset = p[num_exp:amp_ind_start]
+        amp = torch.split(torch.exp(p[amp_ind_start:]), num_neurons)
+
         exponential = torch.zeros_like(time_by_neurons_torch)
 
         for ex in range(num_exp):
-            amp_start_ind = num_exp + ex * num_neurons
-            amp_end_ind = num_exp + (ex + 1) * num_neurons
-            exponential += p[None, amp_start_ind:amp_end_ind] * torch.exp(-t_torch[:, None] / p[ex])
+            exponential += amp[ex] * torch.exp(-t_torch[:, None] / tau[ex])
+
+        if fit_offset:
+            exponential += offset
 
         return exponential
 
@@ -121,10 +135,15 @@ def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_e
         return squared_error.sum()
 
     p_hat = opt.scipy_minimize_with_grad(loss_fn, p_0, optimizer=optimizer, device=device, dtype=dtype).x
+    offset = p_hat[num_exp:amp_ind_start]
 
     exponential_approx = get_exponential_approx(torch.tensor(p_hat)).numpy()
 
-    time_by_neurons_corrected = time_by_neurons_torch / exponential_approx
+    if fit_offset:
+        time_by_neurons_corrected = (time_by_neurons_torch - offset) / (exponential_approx - offset)
+    else:
+        time_by_neurons_corrected = time_by_neurons_torch / exponential_approx
+
     # put the unmeasured value nans back in
     time_by_neurons_corrected[~mask] = np.nan
 
