@@ -60,7 +60,7 @@ def interpolate_over_nans(input_mat, t=None):
     return output_mat, t_interp
 
 
-def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_exp=2):
+def photobleach_correction(time_by_neurons_full, t=None, optimizer='BFGS', num_exp=1):
     """ Function to fit an exponential with a shared tau to all the columns of time_by_neurons
 
     This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
